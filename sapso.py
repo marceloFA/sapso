@@ -59,7 +59,7 @@ class TestFunctions():
 
 def calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_):
   """  Calculates the diversity factor, 
-       which may be -1 (repulsion phase) or 1 (attraction phase)
+       which may be -1 (rstop_criterionulsion phase) or 1 (attraction phase)
   """
   mean = np.mean(swarm, axis=0)
   summ = 0
@@ -107,7 +107,7 @@ def plot_swarm(swarm):
 
 
 
-def sapso(n, m, n_dimensions, min_, max_, initial_inertia, final_inertia, c1, c2, c_max, d_low, d_high, f_name):
+def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, stop_criterion, f_name):
   #TODO: docstring later on
   '''
     The Semi Autonomus particle swarm optmizer
@@ -130,8 +130,6 @@ def sapso(n, m, n_dimensions, min_, max_, initial_inertia, final_inertia, c1, c2
   I = np.zeros((n))                               # Variável para decidir qual dos componentes da equação usar (Preciso entender melhor essa parte)
     
   counter = np.zeros((n))                         # Responsible for changing the I variable state (esse contador é quem mostrará o momento de trocar para a componente social ou gradient)
-   
-  ep = 1e-3                                       # Variável usada na decisão de mudar o estado de I (tolerância)
     
   dir_ = 1                                        # Direction [1 (attraction) or -1 (repulsion)]
 
@@ -161,7 +159,7 @@ def sapso(n, m, n_dimensions, min_, max_, initial_inertia, final_inertia, c1, c2
       #Visualize swarm every 100 iterations:
       #if (m % 100 == 0): plot_swarm(swarm)
       #Calculate inertia as a function of remaining iterations
-      inertia = (initial_inertia - (initial_inertia - final_inertia)) * (i/m); 
+      inertia = (min_inertia - (min_inertia - max_inertia)) * (i/m); 
       
       #For each particle:
       for k in range(n):
@@ -203,7 +201,7 @@ def sapso(n, m, n_dimensions, min_, max_, initial_inertia, final_inertia, c1, c2
           
           #Check to see if we are improving fitness through iterations:
           if I[k] == 0:
-              if abs(fitness - fitness_list[k]) <= ep:
+              if abs(fitness - fitness_list[k]) <= stop_criterion:
                   counter[k] += 1
                   #If SAPSO can not improve fitness in 'c_max' iterations: then 'I' is 1 (particle will go onto the best global instead of gradient information)
                   if counter[k] == c_max:
@@ -213,7 +211,7 @@ def sapso(n, m, n_dimensions, min_, max_, initial_inertia, final_inertia, c1, c2
                   counter[k] = 0
           
           else:
-              if np.sqrt(np.sum((swarm[k] - best_global_position)**2)) < ep:
+              if np.sqrt(np.sum((swarm[k] - best_global_position)**2)) < stop_criterion:
                   I[k] = 0
           
           fitness_list[k] = fitness
