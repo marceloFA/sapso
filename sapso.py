@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 
 
 class TestFunctions():
@@ -225,10 +226,12 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
       diversity, dir_ = calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_)
       best_fitness_history.append(best_global_fitness)
   #recreating the fig object for new and final plot:
-  #fig = plt.figure(figsize=(9,9))
-  #plt.title('Final Position of particles')
-  #plot_swarm(swarm)
-  return best_fitness_history, best_global_position
+  fig = plt.figure(figsize=(9,9))
+  plt.title('Final Position of particles')
+  plot_swarm(swarm)
+  final_positions = 'final_positions.png'
+  plt.savefig(final_positions)
+  return final_positions, best_fitness_history, best_global_position
 
 
 
