@@ -126,6 +126,8 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
  
   fitness_list = np.zeros(n)                      # A list of current fitness o evey particle. reseted every cycle
 
+  old_fitness_list = np.zeros(n)                  # A list of past iteration fitness o evey particle. reseted every cycle
+
   best_global_fitness = 0.0                       # Memory of best ever found fitness
   
   I = np.zeros((n))                               # Variável para decidir qual dos componentes da equação usar (Preciso entender melhor essa parte)
@@ -148,13 +150,13 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   for k in range(n):
       #Start it at a random location:
       swarm[k] = np.array([min_ + np.random.uniform()*(max_-min_) for i in range(n_dimensions)])
-  
-  # Initiate best global position using positions of the first swarm's particle:
-  best_global_position = swarm[0]
+
   # Initiate best fitness:
   fitness_list = list(map(objective_function,swarm))
   #Initiate best global fitness:
   best_global_fitness = min(fitness_list)
+  # Initiate best global position using positions of the first swarm's particle:
+  best_global_position = swarm[fitness_list.index(best_global_fitness)]
 
   
   # Main loop:
@@ -186,14 +188,16 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
               #Update position:
               new_position[j] = swarm[k][j] + velocity[j]
 
-              # Validate position:
+              # Validate position: # TOOD: Reffactor to a simpler sintax
               if new_position[j] > max_: 
-                new_position[j] = max_ 
-                velocity[j] = 0 # check to see if this is correct
+                new_position[j] = max_
+                I[k] == 1
+                counter[k] == 0 
 
               if new_position[j] < min_:
                 new_position[j] = min_
-                velocity[j] = 0 # check to see if this is correct
+                I[k] == 1
+                counter[k] == 0
           
           swarm[k] = new_position
           velocities[k] = velocity
@@ -205,30 +209,30 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
               best_global_position = new_position
           
           fitness_list[k] = fitness
+          old_fitness_list = fitness_list
 
       # if I = 0 particle is following gradient information
       # if I = 1 particle is following global best information
       #differently from other pso version, in sapso a particle can either follow one or another direction (in addition to alway following )
       
-      #After moving all particles, update their I value:
+      # After moving all particles, update their I value:
       for k in range(n):    
-          #Check to see if we are improving fitness through iterations:
-          if I[k] == 0:
-              if abs(fitness_list[k] - fitness_list[k-1]) <= epislon:
-                  #If SAPSO can not improve fitness in 'c_max' iterations: then 'I' is 1 (particle will go onto the best global instead of gradient information)
-                  if counter[k] >= c_max:
-                      I[k] = 1
-                      counter[k] = 0
-
-                  counter[k] += 1
+        #Check to see if we are improving fitness through iterations:
+        if I[k] == 0:
+          if abs(fitness_list[k] - old_fitness_list[k]) <= epislon:
+            counter[k] += 1
+            #If SAPSO can not improve fitness in 'c_max' iterations: then 'I' is 1 (particle will go onto the best global instead of gradient information)
+            if counter[k] == c_max:
+              I[k] = 1
+              counter[k] = 0
                   
-              else:
-                  counter[k] = 0
+          else:
+            counter[k] = 0
           
-          if I[k] == 1:
-              if np.sqrt(np.sum((swarm[k] - best_global_position)**2)) < epsilon_2:
-                  I[k] = 0
-                  counter[k] = 0
+        if I[k] == 1:
+          if abs(np.sqrt(np.sum((swarm[k] - best_global_position)**2))) < epsilon_2:
+            I[k] = 0
+            counter[k] = 0
       
       #Recalculate diversity:
       diversity, dir_ = calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_)
