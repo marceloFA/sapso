@@ -6,8 +6,7 @@ from test_functions import TestFunctions
 
 def calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_):
   """  Calculates the diversity factor, 
-       which may be -1 (repislonulsion phase) or 1 (attraction phase)
-  """
+       which may be -1 (repislonulsion phase) or 1 (attraction phase) """
   mean = np.mean(swarm, axis=0)
   summ = 0
   for k in range(n):
@@ -22,8 +21,6 @@ def calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_):
   return diversity, dir_
 
 
-# TODO: refetorar com map()
-#Entender melhor como funcionam as derivadas parciais
 def calculate_partial_derivative(objective_function, particle, i):
   h = 1e-5
   x = particle
@@ -37,22 +34,61 @@ def calculate_partial_derivative(objective_function, particle, i):
 
   return (func_plus_h - func_minus_h) / (2*h)
 
+def calculate_velocities(previous_velocities,swarm,I,gradients,inertia,dir_,c1,c2):
+  '''Calculates swarm velocities'''
+  new_velocities = []
+  phi_1 = np.random.uniform(size=n_dimensions)
+  phi_2 = np.random.uniform(size=n_dimensions)
+  for velocity, particle, importance, gradient in zip(previous_velocities,swarm,I, gradients):
+    new_velocities.append( (inertia*velocity) + dir_ * (importance*c1*phi_1*(best_global_position - particle) + (importance-1)*c2*phi_2*gradient) )
+  return np.array(new_velocities)
 
-def calculate_gradient(objective_function, particle, n_dimensions):
-  gradient = [calculate_partial_derivative(objective_function, particle, i) for i in range(n_dimensions)]
+def validate_velocities(velocities,max_velocity):
+  ''' Validates velocitites based on a maximum speed factor'''
+  for velocity in velocities:
+    for component in velocity:
+      if component < -max_velocity:  component = -max_velocity
+      elif component > max_velocity: component = max_velocity 
+  return np.array(velocities)
+
+def calculate_gradients(objective_function, swarm, n_dimensions):
+  '''Calculates gradients'''
+  gradients = []
+  for particle in swarm:
+    gradients.append([calculate_partial_derivative(objective_function, particle) for i in range(n_dimensions)])
+  return np.array(gradients)
+
+def validate_gradients(gradients,max_value):
+  '''Validates velocitites based on a maximum speed factor '''
+  for gradient in gradients:
+    for v in gradient:
+      if v < -max_value:  v = -max_value
+      elif v > max_value: v = max_value 
   return np.array(gradient)
 
-def validate_gradient(gradient,max_value):
-  for v in gradient:
-    if v < -max_value:  v = -max_value
-    elif v > max_value: v = max_value 
+def update_positions(swarm,velocities):
+  ''' updates all particle's positions based on their velocity '''
+  for particle, velocity in zip(swarm, velocities):
+    particle += velocity
+  return swarm
 
-  return gradient
+def validate_positions(swarm, max_,min_,I,counters):
+  '''Validates new particle position based on the search space limits '''
+  for particle, importance, c in zip(swarm,I,counters):
+    for position in particle:
+      if position < min_:  
+        position = min_
+        importance == 1
+        c == 0 
 
+      elif position > max_:
+       position = max_ 
+       importance == 1
+       c == 0 
+  return swarm
+   
 def plot_swarm(swarm):
-  '''
-    Plot swarm movimentation through the search space
-  '''
+  ''' Plot swarm movimentation through the search space'''
   x = [position[0] for position in swarm]
   y = [position[1] for position in swarm]
   plt.scatter(x, y)
@@ -60,16 +96,9 @@ def plot_swarm(swarm):
 
 
 def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epislon, f_name, stop_criterion):
-  #TODO: docstring later on
-  '''
-    The Semi Autonomus particle swarm optmizer
-  '''  
-  
-  swarm = np.zeros((n, n_dimensions))             # Current position of all swarm's particles
+  ''' The Semi Autonomus particle swarm optmizer '''  
 
-  inertia_variation = max_inertia - min_inertia
-
-  z = inertia_variation/m                         # inertia component
+  z = (max_inertia - min_inertia)/m               # inertia component
  
   velocities = np.zeros((n, n_dimensions))        # Particle's velocities    
   
@@ -83,9 +112,9 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
 
   best_global_fitness = 0.0                       # Memory of best ever found fitness
   
-  I = np.zeros((n))                               # Variável para decidir qual dos componentes da equação usar (Preciso entender melhor essa parte)
+  I = np.ones(n)                                  # Importance (starts as '1' [attraction phase] by default)
     
-  counter = np.zeros((n))                         # Responsible for changing the I variable state (esse contador é quem mostrará o momento de trocar para a componente social ou gradient)
+  counters = np.zeros((n))                         # Responsible for changing the I variable state (esse contador é quem mostrará o momento de trocar para a componente social ou gradient)
     
   dir_ = 1                                        # Direction [1 (attraction) or -1 (repulsion)]
 
@@ -100,9 +129,8 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   epsilon_2 = 1e-5                                # how does the second epsilon works?
   
   # Initializing ('iteration 0'):
-  for k in range(n):
-      #Start it at a random location:
-      swarm[k] = np.array([min_ + np.random.uniform()*(max_-min_) for i in range(n_dimensions)])
+  #Start swarm's particles at a random location:
+  swarm = np.array([ [min_ + np.random.uniform()*(max_-min_) for i in range(n_dimensions)] for _ in range(n)])
 
   # Initiate best fitness:
   fitness_list = list(map(objective_function,swarm))
@@ -116,43 +144,24 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   for i in range(m):
       #Calculate inertia as a function of remaining iterations:
       inertia = (max_inertia - m) * z 
+      # Save last iteration velocities:
+      previous_velocities = velocities
+      # Calculates and validates Velocity and gradient of all particles every iteration:
+      velocities = validate_velocities( calculate_velocities(previous_velocities,swarm,I,gradients,inertia,dir_,c1,c2), v_max) 
+      gradents = validate_gradients( calculate_gradients(objective_function,swarm, n_dimensions), v_max)
       
       #For each particle:
       for k in range(n):
           # Reset new_position:
           new_position = np.zeros((n_dimensions))
-          #Calculate and validate gradient information:
-          gradient = np.zeros((n_dimensions))
-          
-          
-          #If particle is following gradient information,calculate it:
-          if I[k] == 0:
-              gradient = calculate_gradient(objective_function, swarm[k], n_dimensions)
-              gradient = validate_gradient(gradient,v_max)
-          # Calculate particle velocity:
-          phi_1 = np.random.uniform(size=n_dimensions)
-          phi_2 = np.random.uniform(size=n_dimensions)
-          velocity = (inertia*velocities[k]) + dir_ * (I[k]*c1*phi_1*(best_global_position - swarm[k]) + (I[k]-1)*c2*phi_2*gradient)
+
 
           #For each dimension:
           for j in range(n_dimensions):
-              #Validate velocity:
-              if velocity[j] > v_max: velocity[j] = v_max
-              if velocity[j] < -v_max: velocity[j] = -v_max
-              
               #Update position:
-              new_position[j] = swarm[k][j] + velocity[j]
+              update_positions(swarm, veloctities)
 
-              # Validate position: # TOOD: Reffactor to a simpler sintax
-              if new_position[j] > max_: 
-                new_position[j] = max_
-                I[k] == 1
-                counter[k] == 0 
-
-              if new_position[j] < min_:
-                new_position[j] = min_
-                I[k] == 1
-                counter[k] == 0
+              validate_positions(swarm, max_,min_,I,counters):
           
           swarm[k] = new_position
           velocities[k] = velocity
