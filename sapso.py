@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-
 
 class TestFunctions():
   
@@ -93,11 +90,16 @@ def calculate_partial_derivative(objective_function, particle, i):
   return (func_plus_h - func_minus_h) / (2*h)
 
 
-# Calculates the gradient:
 def calculate_gradient(objective_function, particle, n_dimensions):
-    gradient = [calculate_partial_derivative(objective_function, particle, i) for i in range(n_dimensions)]
-    return np.array(gradient)
+  gradient = [calculate_partial_derivative(objective_function, particle, i) for i in range(n_dimensions)]
+  return np.array(gradient)
 
+def validate_gradient(gradient,max_value):
+  for v in gradient:
+    if v < -max_value:  v = -max_value
+    elif v > max_value: v = max_value 
+
+  return gradient
 
 def plot_swarm(swarm):
   '''
@@ -118,6 +120,10 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   #plt.title('Particles moving through search space')
   
   swarm = np.zeros((n, n_dimensions))             # Current position of all swarm's particles
+
+  inertia_variation = max_inertia - min_inertia
+
+  z = inertia_variation/m                         # inertia component
  
   velocities = np.zeros((n, n_dimensions))        # Particle's velocities    
   
@@ -163,18 +169,20 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   # Main loop:
   for i in range(m):
       #Calculate inertia as a function of remaining iterations:
-      inertia = (min_inertia - (min_inertia - max_inertia)) * (i/m); 
+      inertia = (max_inertia - m) * z 
       
       #For each particle:
       for k in range(n):
-          # Reset new_position and gradient information:
+          # Reset new_position:
           new_position = np.zeros((n_dimensions))
+          #Calculate and validate gradient information:
           gradient = np.zeros((n_dimensions))
+          
           
           #If particle is following gradient information,calculate it:
           if I[k] == 0:
               gradient = calculate_gradient(objective_function, swarm[k], n_dimensions)
-          
+              gradient = validate_gradient(gradient,v_max)
           # Calculate particle velocity:
           phi_1 = np.random.uniform(size=n_dimensions)
           phi_2 = np.random.uniform(size=n_dimensions)
