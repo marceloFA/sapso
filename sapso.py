@@ -1,58 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import matplotlib.pyplot as plt
-
-class TestFunctions():
-  def rosenbrock(self,x):
-    """The Rosenbrock function"""
-    return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
-
-
-  def sphere(self,x):
-    """The Sphere function"""
-    return sum(i*i for i in x)
-
-
-  def rastrigin(self,x):
-    """The Rastrigin function"""
-    return 10 * len(x) + sum(i * i - 10 * np.cos(2 * np.pi * i) for i in x)
-
-
-  def himmelblau(self,x):
-    """The Himmelblau function"""
-    return (x[0]**2 + x[1] - 11)**2 + (x[0] + x[1]**2 - 7)**2
-
-
-  def ackley(self,x):
-    """The Ackley function"""
-    dim = len(x)
-    sum1 = 0
-    sum2 = 0
-    for i in range(dim):
-        sum1 += x[i]**2
-        sum2 += np.cos(2*np.pi*x[i])
-
-    return -20*np.exp(-0.2*np.sqrt(sum1/dim)) - np.exp(sum2/dim) + 20 + np.e
-
-
-  def levi_13(self,x):
-    """The Levy Function N. 13"""
-    return np.sin(3*np.pi*x[0])**2 + (x[0] - 1)**2*(1 + np.sin(3*np.pi*x[1])**2) + (x[1] - 1)**2*(1 + np.sin(2*np.pi*x[1])**2)
-
-
-  def matyas(self,x):
-    """The Matyas function"""
-    return (0.26 * (x[0]**2 + x[1]**2)) - (0.48 * x[0] * x[1])
-
-
-  def booth(self,x):
-    """The Booth function"""
-    return ((x[0] + 2*x[1] - 7)**2) + ((2*x[0] + x[1] +-5)**2)
-  
-  def beale(self,x):
-    """ The Beale function """
-    return (1.5-x[0]+(x[0]*x[1]))**2 + (2.25-x[0]*x[0]*x[1]**2)**2 + (2.625-x[0]+x[0]*x[1]**3)**2
-
+from test_functions import TestFunctions
 
 
 def calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_):
@@ -114,9 +63,7 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   #TODO: docstring later on
   '''
     The Semi Autonomus particle swarm optmizer
-  '''
-  #fig = plt.figure(figsize=(9,9))                 # Object for ploting
-  #plt.title('Particles moving through search space')
+  '''  
   
   swarm = np.zeros((n, n_dimensions))             # Current position of all swarm's particles
 
@@ -152,7 +99,7 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
 
   epsilon_2 = 1e-5                                # how does the second epsilon works?
   
-  # For each particle:
+  # Initializing ('iteration 0'):
   for k in range(n):
       #Start it at a random location:
       swarm[k] = np.array([min_ + np.random.uniform()*(max_-min_) for i in range(n_dimensions)])
@@ -244,14 +191,9 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
       
       #Recalculate diversity:
       diversity, dir_ = calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_)
-      #
+      
       best_fitness_history.append(best_global_fitness)
       #Stop criterion:
       #if len(best_fitness_history) >2 and abs(best_fitness_history[-1]-best_fitness_history[-2]) <= stop_criterion: break
-  #recreating the fig object for new and final plot:
-  fig = plt.figure(figsize=(9,9))
-  plt.title('Final Position of particles')
-  plot_swarm(swarm)
-  final_positions_plot = 'final_positions_plot.png'
-  plt.savefig(final_positions_plot)
-  return final_positions_plot, best_fitness_history, best_global_position
+  
+  return best_global_position
