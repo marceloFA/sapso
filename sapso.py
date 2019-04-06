@@ -34,6 +34,7 @@ def calculate_partial_derivative(objective_function, particle, i):
 
   return (func_plus_h - func_minus_h) / (2*h)
 
+
 def calculate_velocities(previous_velocities,swarm,I,gradients,inertia,dir_,c1,c2):
   '''Calculates swarm velocities'''
   new_velocities = []
@@ -43,6 +44,7 @@ def calculate_velocities(previous_velocities,swarm,I,gradients,inertia,dir_,c1,c
     new_velocities.append( (inertia*velocity) + dir_ * (importance*c1*phi_1*(best_global_position - particle) + (importance-1)*c2*phi_2*gradient) )
   return np.array(new_velocities)
 
+
 def validate_velocities(velocities,max_velocity):
   ''' Validates velocitites based on a maximum speed factor'''
   for velocity in velocities:
@@ -51,12 +53,14 @@ def validate_velocities(velocities,max_velocity):
       elif component > max_velocity: component = max_velocity 
   return np.array(velocities)
 
+
 def calculate_gradients(objective_function, swarm, n_dimensions):
   '''Calculates gradients'''
   gradients = []
   for particle in swarm:
     gradients.append([calculate_partial_derivative(objective_function, particle) for i in range(n_dimensions)])
   return np.array(gradients)
+
 
 def validate_gradients(gradients,max_value):
   '''Validates velocitites based on a maximum speed factor '''
@@ -66,15 +70,17 @@ def validate_gradients(gradients,max_value):
       elif v > max_value: v = max_value 
   return np.array(gradient)
 
+
 def update_positions(swarm,velocities):
   ''' updates all particle's positions based on their velocity '''
   for particle, velocity in zip(swarm, velocities):
     particle += velocity
-  return swarm
+  return np.array(swarm)
 
-def validate_positions(swarm, max_,min_,I,counters):
+
+def validate_positions(swarm, max_,min_,I,counter):
   '''Validates new particle position based on the search space limits '''
-  for particle, importance, c in zip(swarm,I,counters):
+  for particle, importance, c in zip(swarm,I,counter):
     for position in particle:
       if position < min_:  
         position = min_
@@ -85,14 +91,53 @@ def validate_positions(swarm, max_,min_,I,counters):
        position = max_ 
        importance == 1
        c == 0 
-  return swarm
-   
+  return np.array(swarm)
+
+
+def calculate_fitness(objective_function, swarm):
+  ''' Calculates Fitness (Y = f(x)) based on the objective function'''
+  fitness = []
+  for particle in swarm:
+    fitness.append(objective_function(particle))
+  return np.array(fitness)
+
+def update_best_global(swarm, best_global_fitness, best_global_position):
+  '''After an iteration the best fitness found must be updated'''
+  for particle, fit in zip(swarm,fitness):
+    if fit < best_global_fitness:
+      best_global_fitness = fit
+      best_global_position = particle
+  return best_global_fitness, best_global_position
+
+def update_importance(I, fitness, last_fitness, counter, epislon, epislon_2, c_max):
+  '''After an iteration importance for each particle must be updated'''
+  for k in range(n):    
+    #Check to see if we are improving fitness through iterations:
+    if I[k] == 0:
+      if abs(fitness_list[k] - last_fitness_list[k]) <= epislon:
+        counter[k] += 1
+        #If sapso can't improve fitness within c_max iterations:
+        # then importance is 1 (particle will go onto the best global instead of gradient information)
+        if counter[k] == c_max:
+          I[k] = 1
+          counter[k] = 0
+              
+      else:
+        counter[k] = 0
+      
+    if I[k] == 1:
+      if abs(np.sqrt(np.sum((swarm[k] - best_global_position)**2))) < epsilon_2:
+        I[k] = 0
+        counter[k] = 0
+
+  return np.array(I)
+
+
 def plot_swarm(swarm):
   ''' Plot swarm movimentation through the search space'''
   x = [position[0] for position in swarm]
   y = [position[1] for position in swarm]
   plt.scatter(x, y)
-
 
 
 def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epislon, f_name, stop_criterion):
@@ -106,15 +151,15 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
  
   best_global_position = np.zeros((n_dimensions)) # Memory of best ever found position
  
-  fitness_list = np.zeros(n)                      # A list of current fitness o evey particle. reseted every cycle
+  fitness = np.zeros(n)                      # A list of current fitness o evey particle. reseted every cycle
 
-  old_fitness_list = np.zeros(n)                  # A list of past iteration fitness o evey particle. reseted every cycle
+  last_fitness = np.zeros(n)                  # A list of past iteration fitness o evey particle. reseted every cycle
 
   best_global_fitness = 0.0                       # Memory of best ever found fitness
   
   I = np.ones(n)                                  # Importance (starts as '1' [attraction phase] by default)
     
-  counters = np.zeros((n))                         # Responsible for changing the I variable state (esse contador é quem mostrará o momento de trocar para a componente social ou gradient)
+  counter = np.zeros(n)                           # Responsible for changing the I variable state (esse contador é quem mostrará o momento de trocar para a componente social ou gradient)
     
   dir_ = 1                                        # Direction [1 (attraction) or -1 (repulsion)]
 
@@ -142,67 +187,37 @@ def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_ma
   
   # Main loop:
   for i in range(m):
-      #Calculate inertia as a function of remaining iterations:
-      inertia = (max_inertia - m) * z 
+      # Save last iteration fitness:
+      last_fitness = fitness
       # Save last iteration velocities:
       previous_velocities = velocities
-      # Calculates and validates Velocity and gradient of all particles every iteration:
-      velocities = validate_velocities( calculate_velocities(previous_velocities,swarm,I,gradients,inertia,dir_,c1,c2), v_max) 
-      gradents = validate_gradients( calculate_gradients(objective_function,swarm, n_dimensions), v_max)
-      
-      #For each particle:
-      for k in range(n):
-          # Reset new_position:
-          new_position = np.zeros((n_dimensions))
+      #Calculate inertia as a function of remaining iterations:
+      inertia = (max_inertia - m) * z 
 
+      #Calculate Gradient:
+      gradients = calculate_gradients(objective_function,swarm, n_dimensions)
+      gradents = validate_gradients(gradients, v_max)
 
-          #For each dimension:
-          for j in range(n_dimensions):
-              #Update position:
-              update_positions(swarm, veloctities)
+      # Calculate Velocity:
+      velocities = calculate_velocities(previous_velocities, swarm, I, gradients, inertia, dir_, c1, c2)
+      velocities = validate_velocities(velocities, v_max)
 
-              validate_positions(swarm, max_,min_,I,counters):
-          
-          swarm[k] = new_position
-          velocities[k] = velocity
-          fitness = objective_function(swarm[k])
+      # Update Positions:
+      swarm = update_positions(swarm, veloctities)
+      swarm = validate_positions(swarm, max_, min_, I, counter)
 
-           #Verify if it's a new global best:
-          if fitness < best_global_fitness:
-              best_global_fitness = fitness
-              best_global_position = new_position
-          
-          fitness_list[k] = fitness
-          old_fitness_list = fitness_list
+      #Update Fitness list:
+      fitness = calculate_fitness(objective_function, swarm)
 
-      # if I = 0 particle is following gradient information
-      # if I = 1 particle is following global best information
-      #differently from other pso version, in sapso a particle can either follow one or another direction (in addition to alway following )
-      
-      # After moving all particles, update their I value:
-      for k in range(n):    
-        #Check to see if we are improving fitness through iterations:
-        if I[k] == 0:
-          if abs(fitness_list[k] - old_fitness_list[k]) <= epislon:
-            counter[k] += 1
-            #If SAPSO can not improve fitness in 'c_max' iterations: then 'I' is 1 (particle will go onto the best global instead of gradient information)
-            if counter[k] == c_max:
-              I[k] = 1
-              counter[k] = 0
-                  
-          else:
-            counter[k] = 0
-          
-        if I[k] == 1:
-          if abs(np.sqrt(np.sum((swarm[k] - best_global_position)**2))) < epsilon_2:
-            I[k] = 0
-            counter[k] = 0
+      best_global_fitness, best_global_position = update_best_global(swarm, best_global_fitness, best_global_position)
+
+      I = update_importance(I, fitness, last_fitness, counter, epislon, epislon_2, c_max)
       
       #Recalculate diversity:
       diversity, dir_ = calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_)
       
       best_fitness_history.append(best_global_fitness)
-      #Stop criterion:
+      #Stop criterion: TODO
       #if len(best_fitness_history) >2 and abs(best_fitness_history[-1]-best_fitness_history[-2]) <= stop_criterion: break
   
   return best_global_position
