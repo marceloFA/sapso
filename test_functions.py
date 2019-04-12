@@ -1,3 +1,4 @@
+import numpy as np
 class TestFunctions():
   '''
     Test functions for single-objective optimization
@@ -14,20 +15,20 @@ class TestFunctions():
   bukin_min = [-10.,1.]
   matyas_min = [0.,0.]
   levi_13_min = [1.,1.]
-  himmeblau_min = [3.,2.]
+  himmelblau_min = [3.,2.]
 
   #Search Space:
   rastrigin_space = [-5.12,5.12]
   ackley_space = [-5.,5.]
-  sphere_space = [10.,10.]
-  rosenbrock_space = [10.,10.]
+  sphere_space = [-10.,10.]
+  rosenbrock_space = [-10.,10.]
   beale_space = [-4.5,4.5]
   gold_space = [-2.,2.]
   booth_space = [-10.,10.]
   bukin_space = [-15.,3.]
   matyas_space = [-10.,10.]
   levi_13_space = [-10.,10.]
-  himmeblau_space = [-5.,5.]
+  himmelblau_space = [-5.,5.]
 
   
   def rosenbrock(self,x):

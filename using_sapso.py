@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 from sapso import sapso
-from PIL import Image
-from pprint import pprint
-## Parameters 
-n = 20                 # Particles
-m = 5000               # Iterations
-n_dimensions = 2       # Number of dimensions
-min_ = -10.            # Search space size
-max_ = 10.             # Seach space size  
+from test_functions import TestFunctions
 
+## Parameters
+n = 20                 # Particles
+m = 1000               # Iterations
+stop_criterion = 1e-10 # Stop criterion
+n_dimensions = 2       # Number of dimensions     
 min_inertia = .9       # Inertial weight
 max_inertia = .4       # Inertial weight
 c1 = 2                 # Cognitive coefficient
@@ -17,21 +15,10 @@ c_max = 3              # Max consecutive evaluations before finish optmizing
 epsilon = 1e-2         # If the algorithm cannot improve fitness it must stop
 d_low = 1e-1           # Lower threshold for diversity control
 d_high = .25           # Upper threshold for diversity control
+f_name = 'himmelblau'      # Select your optmization
 
-f_name = 'booth'   # Select your optmization
-
-stop_criterion = 1e-10
 
 #Using the optmizer:
-final_positions_plot, best_fitness_history, best_global_position = sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, stop_criterion, f_name, stop_criterion)
-global_minimum = [1,3]
-
-print('Best fitness found was {} and actual global minimum is{}'.format(best_global_position,global_minimum))
-print('Particles\' last positions were as shown on the plot: ')
-#...
-
-img = Image.open(final_positions_plot)
-img.show()
-#Destroy plot after execution:
-from os import remove
-remove(final_positions_plot)
+minimum_found = sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epsilon, f_name, stop_criterion)
+global_minimum = getattr(TestFunctions(),f_name+'_min')
+print('Best fitness found was {} and actual global minimum is{}'.format(minimum_found, global_minimum))

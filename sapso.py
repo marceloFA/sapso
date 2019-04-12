@@ -2,222 +2,192 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from test_functions import TestFunctions
+from numba import jit
+#import ipdb
 
 
-def calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_):
-  """  Calculates the diversity factor, 
-       which may be -1 (repislonulsion phase) or 1 (attraction phase) """
+def calculate_diversity(swarm, L, n):
+  """ Calculates dieversity of the swarm
+    swarm = gorup of particles (n x n_dimensions)
+    L = diagonal length of the search space (scalar)
+    n = number of particles (scalar)
+  """
   mean = np.mean(swarm, axis=0)
-  summ = 0
+  sum_ = 0
   for k in range(n):
-    summ += np.sqrt( np.sum( swarm[k] - mean ) **2 )
-  diversity = 1./(n*L) * summ
-  
-  if diversity < d_low:
+    sum_ += np.sqrt( np.sum( swarm[k] - mean ) **2 )
+  diversity = 1./(n*L) * sum_
+  return diversity
+
+def calculate_dir(dir_, diversity, I, n, d_low, d_high):
+  if (dir_ > 0 and diversity < d_low): # must repulse
     dir_ = -1
-  elif diversity > d_high:
+    I = np.ones(n)
+  elif (dir_ < 0 and diversity > d_high): # must attract
     dir_ = 1
-  
-  return diversity, dir_
+    I = np.zeros(n)
 
+  return dir_, I
 
-def calculate_partial_derivative(objective_function, particle, i):
-  h = 1e-5
-  x = particle
-  xi = x[i]
-  
-  x[i] = xi + h
-  func_plus_h = objective_function(x)
-
-  x[i] = xi - h
-  func_minus_h = objective_function(x)
-
-  return (func_plus_h - func_minus_h) / (2*h)
-
-
-def calculate_velocities(previous_velocities,swarm,I,gradients,inertia,dir_,c1,c2):
-  '''Calculates swarm velocities'''
-  new_velocities = []
+ 
+def calculate_velocity(velocity, particle, importance, gradient, inertia, dir_, c1, c2, n_dimensions, best_global_position):
+  ''' Calculates swarm velocity '''
   phi_1 = np.random.uniform(size=n_dimensions)
   phi_2 = np.random.uniform(size=n_dimensions)
-  for velocity, particle, importance, gradient in zip(previous_velocities,swarm,I, gradients):
-    new_velocities.append( (inertia*velocity) + dir_ * (importance*c1*phi_1*(best_global_position - particle) + (importance-1)*c2*phi_2*gradient) )
-  return np.array(new_velocities)
+  velocity = (inertia*velocity) + dir_ * ( (importance * c1 * phi_1 *(best_global_position - particle) + (importance-1)* c2 * phi_2 *gradient) )
+  return velocity
 
 
-def validate_velocities(velocities,max_velocity):
+def validate_velocity(velocity, max_velocity):
   ''' Validates velocitites based on a maximum speed factor'''
-  for velocity in velocities:
-    for component in velocity:
-      if component < -max_velocity:  component = -max_velocity
-      elif component > max_velocity: component = max_velocity 
-  return np.array(velocities)
+  velocity[ velocity > max_velocity] = max_velocity
+  velocity[ velocity < -max_velocity] = -max_velocity
+  return velocity
 
 
-def calculate_gradients(objective_function, swarm, n_dimensions):
-  '''Calculates gradients'''
-  gradients = []
-  for particle in swarm:
-    gradients.append([calculate_partial_derivative(objective_function, particle) for i in range(n_dimensions)])
-  return np.array(gradients)
+def calculate_gradient(f, particle):
+  ''' Doc string '''
+  gradient = []
+  step = 1e-5
+  f_p = f(particle)
 
-
-def validate_gradients(gradients,max_value):
-  '''Validates velocitites based on a maximum speed factor '''
-  for gradient in gradients:
-    for v in gradient:
-      if v < -max_value:  v = -max_value
-      elif v > max_value: v = max_value 
+  for i in range(len(particle)):
+    xl = particle
+    xl[i] = particle[i] + step
+    gradient.append( (f(xl) - f_p)/step)
   return np.array(gradient)
 
 
-def update_positions(swarm,velocities):
+def validate_gradient(gradient,max_value):
+  '''Validates velocitites based on a maximum speed factor '''
+  gradient[gradient > max_value] = max_value
+  gradient[gradient < -max_value] = -max_value
+  return gradient
+
+
+def update_position(particle,velocity):
   ''' updates all particle's positions based on their velocity '''
-  for particle, velocity in zip(swarm, velocities):
-    particle += velocity
-  return np.array(swarm)
+  particle += velocity
+  return particle
 
 
-def validate_positions(swarm, max_,min_,I,counter):
+def validate_position(particle, importance, c, max_,min_):
   '''Validates new particle position based on the search space limits '''
-  for particle, importance, c in zip(swarm,I,counter):
-    for position in particle:
-      if position < min_:  
-        position = min_
-        importance == 1
-        c == 0 
+  for k in range(len(particle)):
+    if particle[k] < min_:
+      particle[k] = min_
+      importance = 1
+      c = 0
 
-      elif position > max_:
-       position = max_ 
-       importance == 1
-       c == 0 
-  return np.array(swarm)
+    elif particle[k] > max_:
+      particle[k] = max_
+      importance = 1
+      c = 0
+  return particle, importance, c
 
 
-def calculate_fitness(objective_function, swarm):
+def calculate_fitness(objective_function, particle):
   ''' Calculates Fitness (Y = f(x)) based on the objective function'''
-  fitness = []
-  for particle in swarm:
-    fitness.append(objective_function(particle))
-  return np.array(fitness)
+  return objective_function(particle)
 
-def update_best_global(swarm, best_global_fitness, best_global_position):
+
+def update_best_global(particle, fitness, best_global_fitness, best_global_position):
   '''After an iteration the best fitness found must be updated'''
-  for particle, fit in zip(swarm,fitness):
-    if fit < best_global_fitness:
-      best_global_fitness = fit
-      best_global_position = particle
+  if fitness < best_global_fitness:
+    #print('Found new best!')
+    #print('Old position was:',best_global_position)
+    #print("New position is:",particle)
+    best_global_fitness = fitness
+    best_global_position = particle
   return best_global_fitness, best_global_position
 
-def update_importance(I, fitness, last_fitness, counter, epislon, epislon_2, c_max):
+
+def update_importance(I, swarm, fitness, last_fitness, best_global_position, counter, epsilon, epsilon_2, c_max, n):
   '''After an iteration importance for each particle must be updated'''
-  for k in range(n):    
+  for k in range(n):
     #Check to see if we are improving fitness through iterations:
     if I[k] == 0:
-      if abs(fitness_list[k] - last_fitness_list[k]) <= epislon:
+      if abs(fitness[k] - last_fitness[k]) <= epsilon:
         counter[k] += 1
         #If sapso can't improve fitness within c_max iterations:
         # then importance is 1 (particle will go onto the best global instead of gradient information)
         if counter[k] == c_max:
           I[k] = 1
           counter[k] = 0
-              
+
       else:
         counter[k] = 0
-      
-    if I[k] == 1:
-      if abs(np.sqrt(np.sum((swarm[k] - best_global_position)**2))) < epsilon_2:
+
+    elif I[k] == 1:
+      if np.sqrt(np.sum((swarm[k] - best_global_position)**2)) < epsilon_2:
         I[k] = 0
         counter[k] = 0
 
-  return np.array(I)
+  return I, counter
 
 
-def plot_swarm(swarm):
-  ''' Plot swarm movimentation through the search space'''
-  x = [position[0] for position in swarm]
-  y = [position[1] for position in swarm]
-  plt.scatter(x, y)
-
-
-def sapso(n, m, n_dimensions, min_, max_, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epislon, f_name, stop_criterion):
-  ''' The Semi Autonomus particle swarm optmizer '''  
-
+def sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epsilon, f_name, stop_criterion):
+  ''' The Semi Autonomus particle swarm optmizer '''
+  #ipdb.set_trace()
+  min_ , max_ = getattr(TestFunctions(),f_name+'_space') # Search space limitation
   z = (max_inertia - min_inertia)/m               # inertia component
- 
-  velocities = np.zeros((n, n_dimensions))        # Particle's velocities    
-  
-  v_max = abs(max_ - min_)/2                      # Maximum velocities
- 
-  best_global_position = np.zeros((n_dimensions)) # Memory of best ever found position
- 
-  fitness = np.zeros(n)                      # A list of current fitness o evey particle. reseted every cycle
-
-  last_fitness = np.zeros(n)                  # A list of past iteration fitness o evey particle. reseted every cycle
-
-  best_global_fitness = 0.0                       # Memory of best ever found fitness
-  
-  I = np.ones(n)                                  # Importance (starts as '1' [attraction phase] by default)
-    
+  velocity = np.zeros((n,n_dimensions))           # Particle's velocity
+  gradient = np.zeros((n,n_dimensions))           # Particle's gradient information
+  v_max = abs(max_ - min_)/2                      # Maximum velocity
   counter = np.zeros(n)                           # Responsible for changing the I variable state (esse contador é quem mostrará o momento de trocar para a componente social ou gradient)
-    
   dir_ = 1                                        # Direction [1 (attraction) or -1 (repulsion)]
-
-  L = abs(max_-min_)                              # Maximum radius of the search space
-  
+  L = np.linalg.norm([max_-min_ for _ in range(n_dimensions)])  # Maximum radius of the search space
   diversity = 0.                                  # Diversity factor
-
   best_fitness_history = []                       # Best fitness history (for each iteration)
-
   objective_function = getattr(TestFunctions(),f_name)
-
   epsilon_2 = 1e-5                                # how does the second epsilon works?
-  
+
   # Initializing ('iteration 0'):
   #Start swarm's particles at a random location:
   swarm = np.array([ [min_ + np.random.uniform()*(max_-min_) for i in range(n_dimensions)] for _ in range(n)])
 
-  # Initiate best fitness:
-  fitness_list = list(map(objective_function,swarm))
+  # Importance (starts as '1' [attraction phase] by default):
+  I = np.ones(n)
+  # Initiate fitness list:
+  fitness_list = np.array(list(map(objective_function,swarm)))
   #Initiate best global fitness:
-  best_global_fitness = min(fitness_list)
-  # Initiate best global position using positions of the first swarm's particle:
-  best_global_position = swarm[fitness_list.index(best_global_fitness)]
-
-  
+  best_global_fitness = np.amin(fitness_list)
+  # Initiate best global position:
+  best_global_position = swarm[np.where(fitness_list == best_global_fitness)][0]
   # Main loop:
   for i in range(m):
       # Save last iteration fitness:
-      last_fitness = fitness
-      # Save last iteration velocities:
-      previous_velocities = velocities
+      last_fitness = fitness_list
       #Calculate inertia as a function of remaining iterations:
-      inertia = (max_inertia - m) * z 
+      inertia = (max_inertia - i) * z
+      #print('iteration'+str(i))
 
-      #Calculate Gradient:
-      gradients = calculate_gradients(objective_function,swarm, n_dimensions)
-      gradents = validate_gradients(gradients, v_max)
+      for k in range(n):
+          #Calculate Gradient:
+          gradient[k] = calculate_gradient(objective_function, swarm[k])
+          gradient[k] = validate_gradient(gradient[k], v_max)
 
-      # Calculate Velocity:
-      velocities = calculate_velocities(previous_velocities, swarm, I, gradients, inertia, dir_, c1, c2)
-      velocities = validate_velocities(velocities, v_max)
+          velocity[k] = calculate_velocity(velocity[k], swarm[k], I[k], gradient[k], inertia, dir_, c1, c2, n_dimensions,best_global_position)
+          velocity[k] = validate_velocity(velocity[k], v_max)
 
-      # Update Positions:
-      swarm = update_positions(swarm, veloctities)
-      swarm = validate_positions(swarm, max_, min_, I, counter)
+          # Update Positions:
+          swarm[k] = update_position(swarm[k], velocity[k])
+          swarm[k], I[k], counter[k] = validate_position(swarm[k], I[k], counter[k], max_, min_)
 
-      #Update Fitness list:
-      fitness = calculate_fitness(objective_function, swarm)
+          #Update Fitness list:
+          fitness_list[k] = objective_function(swarm[k])
 
-      best_global_fitness, best_global_position = update_best_global(swarm, best_global_fitness, best_global_position)
+          #Update best global position and fitness:
+          best_global_fitness, best_global_position = update_best_global(swarm[k], fitness_list[k], best_global_fitness, best_global_position)
 
-      I = update_importance(I, fitness, last_fitness, counter, epislon, epislon_2, c_max)
-      
-      #Recalculate diversity:
-      diversity, dir_ = calculate_diversity_and_dir(d_low, d_high, n, L, swarm, dir_)
-      
-      best_fitness_history.append(best_global_fitness)
-      #Stop criterion: TODO
-      #if len(best_fitness_history) >2 and abs(best_fitness_history[-1]-best_fitness_history[-2]) <= stop_criterion: break
-  
+      #Update importance:
+      I, counter = update_importance(I, swarm, fitness_list, last_fitness, best_global_position, counter, epsilon, epsilon_2, c_max, n)
+
+      #Recalculate diversity and direction:
+      diversity = calculate_diversity(swarm, L, n)
+      dir_, I   = calculate_dir(dir_, diversity, I, n, d_low, d_high)
+      #Check to see how optmization is doing:
+      #print('\nIteração {}: ',i)
+      #print('Melhor global: ',best_global_fitness)
+      #print('Melhor posição: ',best_global_position)
   return best_global_position
