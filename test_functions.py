@@ -5,17 +5,17 @@ class TestFunctions():
   '''
 
   #Global Minimum:
-  rastrigin_min = [0.,0.]
-  ackley_min = [0.,0.]
-  sphere_min = [0.,0.]
-  rosenbrock_min = [1.,1.]
-  beale_min = [3.,0.5]
-  gold_min = [0.,-1.]
-  booth_min = [1.,3.]
-  bukin_min = [-10.,1.]
-  matyas_min = [0.,0.]
-  levi_13_min = [1.,1.]
-  himmelblau_min = [3.,2.]
+  rastrigin_min = np.array([0.,0.])
+  ackley_min = np.array([0.,0.])
+  sphere_min = np.array([0.,0.])
+  rosenbrock_min = np.array([1.,1.])
+  beale_min = np.array([3.,0.5])
+  gold_min = np.array([0.,-1.])
+  booth_min = np.array([1.,3.])
+  bukin_min = np.array([-10.,1.])
+  matyas_min = np.array([0.,0.])
+  levi_13_min = np.array([1.,1.])
+  himmelblau_min = np.array([3.,2.])
 
   #Search Space:
   rastrigin_space = [-5.12,5.12]
@@ -33,7 +33,7 @@ class TestFunctions():
   
   def rosenbrock(self,x):
     """The Rosenbrock function"""
-    return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    return sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
 
 
   def sphere(self,x):

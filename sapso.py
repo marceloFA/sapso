@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from test_functions import TestFunctions
 from numba import jit
-#import ipdb
+import ipdb
 
 
 def calculate_diversity(swarm, L, n):
@@ -12,12 +12,13 @@ def calculate_diversity(swarm, L, n):
     L = diagonal length of the search space (scalar)
     n = number of particles (scalar)
   """
-  mean = np.mean(swarm, axis=0)
   sum_ = 0
-  for k in range(n):
-    sum_ += np.sqrt( np.sum( swarm[k] - mean ) **2 )
-  diversity = 1./(n*L) * sum_
+  mean = np.mean(swarm, axis=0)
+  minus_mean = np.array([particle - mean for particle in swarm]) ** 2
+  factor = np.sum(np.sqrt(np.sum(minus_mean,axis=1)))
+  diversity = 1./(n*L) * factor
   return diversity
+
 
 def calculate_dir(dir_, diversity, I, n, d_low, d_high):
   if (dir_ > 0 and diversity < d_low): # must repulse
@@ -91,14 +92,18 @@ def calculate_fitness(objective_function, particle):
   return objective_function(particle)
 
 
-def update_best_global(particle, fitness, best_global_fitness, best_global_position):
+def update_best_global(i,k,particle, fitness, particle_best_fitness, best_global_fitness, best_global_position):
   '''After an iteration the best fitness found must be updated'''
+  if fitness < particle_best_fitness:
+    particle_best_fitness = np.copy(fitness)
+
   if fitness < best_global_fitness:
-    #print('Found new best!')
-    #print('Old position was:',best_global_position)
-    #print("New position is:",particle)
-    best_global_fitness = fitness
-    best_global_position = particle
+    print('At iteration ',i,' particle ',k,' found new best!')
+    print('Particle info: position {} and fitness {}'.format(particle,fitness))
+    print('Old position was:{} old fitness was: {}'.format(best_global_position,best_global_fitness))
+    best_global_fitness = np.copy(fitness)
+    best_global_position = np.copy(particle)
+    print("New best position is: {} new best fitness is: {} \n".format(best_global_position,best_global_fitness))
   return best_global_fitness, best_global_position
 
 
@@ -128,7 +133,7 @@ def update_importance(I, swarm, fitness, last_fitness, best_global_position, cou
 
 def sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epsilon, f_name, stop_criterion):
   ''' The Semi Autonomus particle swarm optmizer '''
-  #ipdb.set_trace()
+
   min_ , max_ = getattr(TestFunctions(),f_name+'_space') # Search space limitation
   z = (max_inertia - min_inertia)/m               # inertia component
   velocity = np.zeros((n,n_dimensions))           # Particle's velocity
@@ -149,15 +154,16 @@ def sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_
   # Importance (starts as '1' [attraction phase] by default):
   I = np.ones(n)
   # Initiate fitness list:
-  fitness_list = np.array(list(map(objective_function,swarm)))
+  current_fitness = np.array(list(map(objective_function,swarm)))
+  personal_best_fitness = np.array(n)
   #Initiate best global fitness:
-  best_global_fitness = np.amin(fitness_list)
+  best_global_fitness = np.amin(current_fitness)
   # Initiate best global position:
-  best_global_position = swarm[np.where(fitness_list == best_global_fitness)][0]
+  best_global_position = swarm[np.where(current_fitness == best_global_fitness)][0]
   # Main loop:
   for i in range(m):
       # Save last iteration fitness:
-      last_fitness = fitness_list
+      last_fitness = current_fitness
       #Calculate inertia as a function of remaining iterations:
       inertia = (max_inertia - i) * z
       #print('iteration'+str(i))
@@ -175,19 +181,17 @@ def sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_
           swarm[k], I[k], counter[k] = validate_position(swarm[k], I[k], counter[k], max_, min_)
 
           #Update Fitness list:
-          fitness_list[k] = objective_function(swarm[k])
+          current_fitness[k] = objective_function(swarm[k])
 
           #Update best global position and fitness:
-          best_global_fitness, best_global_position = update_best_global(swarm[k], fitness_list[k], best_global_fitness, best_global_position)
+          #ipdb.set_trace()
+          best_global_fitness, best_global_position = update_best_global(i,k,swarm[k], current_fitness[k], personal_best_fitness, best_global_fitness, best_global_position)
 
       #Update importance:
-      I, counter = update_importance(I, swarm, fitness_list, last_fitness, best_global_position, counter, epsilon, epsilon_2, c_max, n)
+      I, counter = update_importance(I, swarm, current_fitness, last_fitness, best_global_position, counter, epsilon, epsilon_2, c_max, n)
 
       #Recalculate diversity and direction:
       diversity = calculate_diversity(swarm, L, n)
       dir_, I   = calculate_dir(dir_, diversity, I, n, d_low, d_high)
-      #Check to see how optmization is doing:
-      #print('\nIteração {}: ',i)
-      #print('Melhor global: ',best_global_fitness)
-      #print('Melhor posição: ',best_global_position)
-  return best_global_position
+      
+  return best_global_position, best_global_fitness
