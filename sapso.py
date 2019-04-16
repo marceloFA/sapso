@@ -1,17 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import matplotlib.pyplot as plt
 from test_functions import TestFunctions
-from numba import jit
-from os import getpid
-import ipdb
+from os import getpid 
+import ipdb # ipython debugger
 
-@jit(nopython=True)
-def standard_normal(size=1):
-    r = np.empty(size, dtype=np.float64)
-    for i in range(size):
-        r[i] = np.random.standard_normal()
-    return r
 
 
 def calculate_diversity(swarm, L, n):
@@ -27,7 +19,7 @@ def calculate_diversity(swarm, L, n):
   diversity = 1./(n*L) * factor
   return diversity
 
-@jit(nopython=True)
+
 def calculate_dir(dir_, diversity, I, n, d_low, d_high):
   if (dir_ > 0 and diversity < d_low): # must repulse
     dir_ = -1
@@ -41,12 +33,12 @@ def calculate_dir(dir_, diversity, I, n, d_low, d_high):
 
 def calculate_velocity(velocity, particle, importance, gradient, inertia, dir_, c1, c2, n_dimensions, best_global_position, return_dict=None):
   ''' Calculates swarm velocity '''
-  phi_1 = standard_normal(size=n_dimensions)
-  phi_2 = standard_normal(size=n_dimensions)
+  phi_1 = np.random.standard_normal(size=n_dimensions)
+  phi_2 = np.random.standard_normal(size=n_dimensions)
   velocity = (inertia*velocity) + dir_ * ( (importance * c1 * phi_1 *(best_global_position - particle) + (importance-1)* c2 * phi_2 *gradient) )
   return velocity
 
-@jit(nopython=True)
+
 def validate_velocity(velocity, max_velocity):
   ''' Validates velocitites based on a maximum speed factor'''
   velocity[ velocity > max_velocity] = max_velocity
@@ -60,13 +52,14 @@ def calculate_gradient(f, particle):
   step = 1e-5
   f_p = f(particle)
 
+
   for i in range(len(particle)):
     xl = particle
     xl[i] = particle[i] + step
     gradient.append( (f(xl) - f_p)/step)
   return np.array(gradient)
 
-@jit(nopython=True)
+
 def validate_gradient(gradient,max_value):
   '''Validates velocitites based on a maximum speed factor '''
   gradient[gradient > max_value] = max_value
@@ -110,7 +103,7 @@ def update_best_global(i,k,particle, fitness, particle_best_fitness, best_global
     best_global_position = np.copy(particle)
   return best_global_fitness, best_global_position
 
-@jit(nopython=True)
+
 def update_importance(I, swarm, fitness, last_fitness, best_global_position, counter, epsilon, epsilon_2, c_max, n):
   '''After an iteration importance for each particle must be updated'''
   for k in range(n):
@@ -134,9 +127,27 @@ def update_importance(I, swarm, fitness, last_fitness, best_global_position, cou
 
   return I, counter
 
-@profile
-def sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_high, epsilon, f_name, stop_criterion, return_dict=None):
+#@profile
+def sapso(parameters):
   ''' The Semi Autonomus particle swarm optmizer '''
+  # Parameters as individual variables:
+  p = Bunch(parameters)
+  n = p.n
+  m = p.m
+  stop_criterion = p.stop_criterion
+  n_dimensions = p.n_dimensions
+  min_inertia = p.min_inertia
+  max_inertia = p.max_inertia
+  c1 = p.c1
+  c2 = p.c2
+  c_max = p.c_max
+  epsilon = p.epsilon
+  d_low = p.d_low
+  d_high = p.d_high
+  f_name = p.f_name
+  return_dict = p.return_dict
+
+
   pid = getpid()
   min_ , max_ = getattr(TestFunctions(),f_name+'_space') # Search space limitation
   z = (max_inertia - min_inertia)/m               # inertia component
@@ -205,3 +216,9 @@ def sapso(n, m, n_dimensions, min_inertia, max_inertia, c1, c2, c_max, d_low, d_
     return return_dict
 
   return best_global_position, best_global_fitness
+
+
+class Bunch(object):
+  ''' Import parameters dicitionary into sapso script namespace'''
+  def __init__(self, parameters):
+    self.__dict__.update(parameters)

@@ -1,2 +1,0 @@
-from timeit import timeit
-
