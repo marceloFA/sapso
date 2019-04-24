@@ -1,38 +1,39 @@
+import numpy as np
 class TestFunctions():
   '''
     Test functions for single-objective optimization
   '''
 
   #Global Minimum:
-  rastrigin_min = [0.,0.]
-  ackley_min = [0.,0.]
-  sphere_min = [0.,0.]
-  rosenbrock_min = [1.,1.]
-  beale_min = [3.,0.5]
-  gold_min = [0.,-1.]
-  booth_min = [1.,3.]
-  bukin_min = [-10.,1.]
-  matyas_min = [0.,0.]
-  levi_13_min = [1.,1.]
-  himmeblau_min = [3.,2.]
+  rastrigin_min = np.array([0.,0.])
+  ackley_min = np.array([0.,0.])
+  sphere_min = np.array([0.,0.])
+  rosenbrock_min = np.array([1.,1.])
+  beale_min = np.array([3.,0.5])
+  gold_min = np.array([0.,-1.])
+  booth_min = np.array([1.,3.])
+  bukin_min = np.array([-10.,1.])
+  matyas_min = np.array([0.,0.])
+  levi_13_min = np.array([1.,1.])
+  himmelblau_min = np.array([3.,2.])
 
   #Search Space:
   rastrigin_space = [-5.12,5.12]
   ackley_space = [-5.,5.]
-  sphere_space = [10.,10.]
-  rosenbrock_space = [10.,10.]
+  sphere_space = [-10.,10.]
+  rosenbrock_space = [-10.,10.]
   beale_space = [-4.5,4.5]
   gold_space = [-2.,2.]
   booth_space = [-10.,10.]
   bukin_space = [-15.,3.]
   matyas_space = [-10.,10.]
   levi_13_space = [-10.,10.]
-  himmeblau_space = [-5.,5.]
+  himmelblau_space = [-5.,5.]
 
   
   def rosenbrock(self,x):
     """The Rosenbrock function"""
-    return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    return sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
 
 
   def sphere(self,x):
