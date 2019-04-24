@@ -11,6 +11,7 @@ def calculate_diversity(swarm, L, n):
     swarm = gorup of particles (n x n_dimensions)
     L = diagonal length of the search space (scalar)
     n = number of particles (scalar)
+    does not support numba (kwarg of np.mean is not supported)
   """
   sum_ = 0
   mean = np.mean(swarm, axis=0)
@@ -20,9 +21,10 @@ def calculate_diversity(swarm, L, n):
   return diversity
 
 
-
+@jit(nopython=True)
 def calculate_dir_and_importance(dir_, diversity, I, n, d_low, d_high):
-  ''' Calculates direction and importance'''
+  ''' Calculates direction and importance
+  Supports  numba'''
   if (dir_ > 0 and diversity < d_low): # must repulse
     dir_ = -1
     I = np.ones(n)
@@ -35,7 +37,8 @@ def calculate_dir_and_importance(dir_, diversity, I, n, d_low, d_high):
 
 
 def calculate_gradient(f, particle,last_fitness):
-  ''' Doc string'''
+  ''' Doc string 
+    Supports numba (make execution way longer, tough) but nopython is not supported'''
   gradient = list()
   step = 1e-5
   f_p = last_fitness
@@ -46,7 +49,7 @@ def calculate_gradient(f, particle,last_fitness):
     gradient.append( (f(xl) - f_p)/step)
   return gradient
 
-
+@jit(nopython=True)
 def validate_gradient(gradient,max_value):
   '''Validates velocitites based on a maximum speed factor '''
   gradient[gradient > max_value] = max_value
@@ -54,29 +57,32 @@ def validate_gradient(gradient,max_value):
   return gradient
 
 
-
+@jit(nopython=True)
 def calculate_velocity(velocity, particle, importance, gradient, inertia, dir_, c1, c2, n_dimensions, best_global_position):
-  ''' Calculates swarm velocity'''
+  ''' Calculates swarm velocity
+      Supports numba '''
   phi_1 = np.random.standard_normal(size=n_dimensions)
   phi_2 = np.random.standard_normal(size=n_dimensions)
   return (inertia*velocity) + dir_ * ( (importance * c1 * phi_1 *(best_global_position - particle) + (importance-1)* c2 * phi_2 *gradient) )
   
 
-
+@jit(nopython=True)
 def validate_velocity(velocity, max_velocity):
-  ''' Validates velocitites based on a maximum speed factor'''
+  ''' Validates velocitites based on a maximum speed factor
+      Supports numba '''
   velocity[ velocity > max_velocity] = max_velocity
   velocity[ velocity < -max_velocity] = -max_velocity
   return velocity
 
 
-
+@jit(nopython=True)
 def update_position(particle,velocity):
-  ''' updates all particle's positions based on their velocity'''
+  ''' updates all particle's positions based on their velocity
+  Supports numba '''
   particle += velocity
   return particle
 
-
+@jit(nopython=True)
 def validate_position(particle, importance, c, max_,min_):
   '''Validates new particle position based on the search space limits '''
   for k in range(len(particle)):
@@ -93,12 +99,17 @@ def validate_position(particle, importance, c, max_,min_):
 
 
 def calculate_fitness(objective_function, particle):
-  ''' Calculates Fitness (Y = f(x)) based on the objective function'''
+  ''' Calculates Fitness (Y = f(x)) based on the objective function
+  Does not upports numba.
+  Following test functions were tested with numba:
+  Sphere
+  '''
   return objective_function(particle)
 
-
+@jit(nopython=True)
 def update_best_global(particle, fitness, best_global_fitness, best_global_position):
-  '''After an iteration the best fitness found must be updated'''
+  '''After an iteration the best fitness found must be updated
+  Supports numba'''
   new_best_global_fitness = np.float64(0)
   new_best_global_position = np.array([0],dtype=np.float64)
 
@@ -108,7 +119,7 @@ def update_best_global(particle, fitness, best_global_fitness, best_global_posit
 
   return new_best_global_fitness, new_best_global_position
 
-
+@jit(nopython=True)
 def update_importance(I, swarm, fitness, last_fitness, best_global_position, counter, epsilon, epsilon_2, c_max, n):
   '''After an iteration importance for each particle must be updated'''
   for k in range(n):

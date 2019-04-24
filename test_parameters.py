@@ -1,9 +1,9 @@
 
 parameters = {
 	'n' : 20,                  # Particles
-	'm' : 5000 ,               # Iterations
+	'm' : 4000 ,               # Iterations
 	'stop_criterion' : 1e-10,  # Stop criterion
-	'n_dimensions' : 50,       # Number of dimensions     
+	'n_dimensions' : 2,       # Number of dimensions     
 	'min_inertia' : .9,        # Inertial weight
 	'max_inertia' : .4,        # Inertial weight
 	'c1' : 2,                  # Cognitive coefficient
