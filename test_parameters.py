@@ -2,8 +2,8 @@
 parameters = {
 	'n' : 20,                  # Particles
 	'm' : 4000 ,               # Iterations
-	'stop_criterion' : 1e-10,  # Stop criterion
-	'n_dimensions' : 2,       # Number of dimensions     
+	'stop' : 1e-10,            # Stop criterion
+	'n_dimensions' : 2,        # Number of dimensions     
 	'min_inertia' : .9,        # Inertial weight
 	'max_inertia' : .4,        # Inertial weight
 	'c1' : 2,                  # Cognitive coefficient
@@ -13,5 +13,4 @@ parameters = {
 	'd_low' : 1e-1,            # Lower threshold for diversity control
 	'd_high' : .25,            # Upper threshold for diversity control
 	'f_name' : 'rastrigin',    # Select your optmization function
-	'return_dict': None,       # Only for brute force parallelization tests
 	}
