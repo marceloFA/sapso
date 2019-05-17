@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from multiprocessing import Pool, cpu_count, Manager
+from multiprocessing import Pool, cpu_count
 from test_functions import TestFunctions
 
 def sapso(parameters):
@@ -8,8 +8,9 @@ def sapso(parameters):
         This version implements a parallel calculation of 
         gradient information to improve its performance.
     '''
-    # Define some parameters
-    n, m, n_dims, min_inertia, max_inertia, c1, c2, c_max, epsilon, d_low, d_high, stop, f_name, parallel_gradient = parameters
+    # Define some parameters:
+    n, m, n_dims, min_inertia, max_inertia, c1, c2, c_max, epsilon, d_low, d_high, stop, f_name = parameters
+    parallel = False
     dir_ = 1
     diversity = 0.                
     epsilon_2 = 1e-5              
@@ -19,7 +20,8 @@ def sapso(parameters):
     function = getattr(TestFunctions(), f_name)
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
-
+    optmizer_counter = 0
+    stop_counter = 50 # n iters without new best_global
     # Initialize components:
     velocity = np.zeros((n, n_dims))
     gradient = np.zeros((n, n_dims))
@@ -37,18 +39,22 @@ def sapso(parameters):
     # Main loop:
     for i in range(m):
         last_fitness = np.copy(fitness)
+        last_best_fitness = np.copy(best_fitness)
         inertia = (max_inertia - i) * z
-        gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, parallel_gradient)
+        gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, parallel)
 
         for k in range(n):
             velocity[k] = calculate_velocity( velocity[k], swarm[k], importance[k], gradient[k], n_dims, inertia, c1, c2, best_position, v_max, dir_)
             update_position(swarm[k], velocity[k], importance[k], counter[k], min_, max_)
             fitness[k] = function(swarm[k])
-            best_fitness, best_position = update_best_global(swarm[k], fitness[k], best_fitness, best_position, i)
+            best_fitness, best_position = update_best_global(swarm[k], fitness[k], best_fitness, best_position)
 
         update_importance(importance, swarm, fitness, last_fitness, counter, best_position, n, c_max, epsilon, epsilon_2)
         diversity = calculate_diversity(swarm, n, L)
         importance = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
+        stop_counter = stop_condition(stop_counter, best_fitness, last_best_fitness, stop)
+        # Stop criterion
+        if optmizer_counter > stop_counter: break
 
     return best_position, best_fitness
 
@@ -152,7 +158,9 @@ def calculate_velocity(velocity, particle, importance, gradient, n_dims, inertia
     phi = np.random.standard_normal(size=size)
     phi_1 = phi[:size // 2]
     phi_2 = phi[size // 2:]
-    velocity = (inertia * velocity) + dir_ * ((importance * c1 * phi_1 * (best_position - particle) + (importance - 1) * c2 * phi_2 * gradient))
+    component_1 = importance * c1 * phi_1 * (best_position - particle)
+    component_2 = (importance - 1) * c2 * phi_2 * gradient
+    velocity = (inertia * velocity) + dir_ * (component_1 + component_2)
     
     # Validate it:
     velocity[velocity > v_max] = v_max
@@ -179,15 +187,19 @@ def update_position(particle, velocity, importance, counter, min_, max_):
             c = 0
 
 
-def update_best_global(particle, fitness, best_fitness, best_position, i):
+def update_best_global(particle, fitness, best_fitness, best_position):
     '''After an iteration the best fitness found must be updated'''
     if fitness < best_fitness:
-        print('found new best at iteration {}'.format(i), fitness)
         best_fitness = np.copy(fitness)
         best_position = np.copy(particle)
     return best_fitness, best_position
 
-# Import parameters to the local namespace
+
+def stop_condition(stop_counter,best_fitness,last_best_fitness,stop):    
+    if np.all((best_fitness - last_best_fitness) < stop):
+        stop_counter += 1
+    return stop_counter
+
 class Bunch(object):
     '''Saves parameters to the local namespace where
     it's called as individual variables'''
