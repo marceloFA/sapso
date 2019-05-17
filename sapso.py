@@ -9,8 +9,7 @@ def sapso(parameters):
         gradient information to improve its performance.
     '''
     # Define some parameters:
-    n, m, n_dims, min_inertia, max_inertia, c1, c2, c_max, epsilon, d_low, d_high, stop, f_name = parameters
-    parallel = False
+    n, m, n_dims, min_inertia, max_inertia, c1, c2, c_max, epsilon, d_low, d_high, stop, f_name, parallel = parameters
     dir_ = 1
     diversity = 0.                
     epsilon_2 = 1e-5              
@@ -21,7 +20,7 @@ def sapso(parameters):
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
     optmizer_counter = 0
-    stop_counter = 50 # n iters without new best_global
+    stop_counter = 100 # n iters without new best_global
     # Initialize components:
     velocity = np.zeros((n, n_dims))
     gradient = np.zeros((n, n_dims))

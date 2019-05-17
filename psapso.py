@@ -150,9 +150,8 @@ def make_params_global(params):
     global_params = params
 
 
-def sapso(parameters):
-    '''The Parallel Semi Autonomus particle swarm optmizer'''
-
+def psapso(parameters):
+    '''The Parallel Semi Autonomus particle swarm optmizer'''s
     # Define some parameters:
     n, m, n_dims, min_inertia, max_inertia, c1, c2, c_max, epsilon, d_low, d_high, stop, f_name = parameters
     dir_ = 1
@@ -165,7 +164,7 @@ def sapso(parameters):
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
     optmizer_counter = 0
-    stop_counter = 50 # n iters without new best_global
+    stop_counter = 100 # n iters without new best_global
 
     # Get dict of params to be passed to work pools according to task needs:
     params = {'n_dims':n_dims, 'v_max':v_max, 'f':function, 'c1':c1, 'c2':c2, 'v_max':v_max}
@@ -207,5 +206,4 @@ def sapso(parameters):
         stop_counter = stop_condition(stop_counter,best_fitness,last_best_fitness,stop)
         # Stop criterion
         if optmizer_counter > stop_counter: break
-        
     return best_position, best_fitness
