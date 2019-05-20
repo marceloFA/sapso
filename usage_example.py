@@ -4,7 +4,8 @@ from sapso import sapso # not parallel
 from test_functions import TestFunctions
 
 f_name = 'sphere'
-parameters = (20, 1000, 2, .9, .4, 2, 2, 3, 1e-2, 1e-1, .25, 1e-10, f_name)
+parallel = True
+parameters = (20, 1000, 2, .9, .4, 2, 2, 3, 1e-2, 1e-1, .25, 1e-10, f_name, parallel)
 
 # Using the optmizer:
 position, minimum_found = sapso(parameters)
