@@ -3,8 +3,8 @@ from test_functions import TestFunctions
 from test_parameters import parameters
 from time import time
 
-f_name = parameters['f_name']
 # Using the optmizer:
+f_name = parameters['f_name']
 start = time()
 position, minimum_found = psapso(parameters)
 finish = time() - start
