@@ -36,7 +36,7 @@ def psapso(parameters):
     optmizer_counter = 0
     stop_counter = 100 # n iters without new best_global
 
-    # Get dict of params to be passed to work pools according to task needs:
+    # Get dict of params to be passed to work pools according to tasks needs:
     params = {'n_dims':n_dims, 'v_max':v_max, 'f':function, 'c1':c1, 'c2':c2, 'v_max':v_max}
     
     # Instantiate Pools:

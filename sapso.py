@@ -48,6 +48,7 @@ def sapso(parameters):
 
     #create group of data to be passed to a worker pool, in case its a parallel execution
     grad_params = {'n_dims':n_dims, 'v_max': v_max, 'f': function}
+    chunksize = int(n/cpu_count())
     grad_work_pool = Pool(cpu_count(), initializer=make_global, initargs=(grad_params,))
     
     # Main loop:
@@ -55,7 +56,7 @@ def sapso(parameters):
         last_fitness = np.copy(fitness)
         last_best_fitness = np.copy(best_fitness)
         inertia = (max_inertia - i) * z
-        gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, parallel)
+        gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, chunksize, parallel)
 
         for k in range(n):
             velocity[k] = calculate_velocity( velocity[k], swarm[k], importance[k], gradient[k], n_dims, inertia, c1, c2, best_position, v_max, dir_)
