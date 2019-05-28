@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
-from sapso import sapso # not parallel
-#from psapso import sapso # parallel
+from psapso import psapso 
 from test_functions import TestFunctions
+from test_parameters import parameters
+from time import time
 
-f_name = 'sphere'
-parameters = (20, 1000, 2, .9, .4, 2, 2, 3, 1e-2, 1e-1, .25, 1e-10, f_name)
-
+f_name = parameters['f_name']
 # Using the optmizer:
-position, minimum_found = sapso(parameters)
-
+start = time()
+position, minimum_found = psapso(parameters)
+finish = time() - start
 # Printing out results:
 real_minimum = getattr(TestFunctions(), f_name + '_min')
 f = getattr(TestFunctions(), f_name)
@@ -17,4 +16,4 @@ print('Best fitness found was {} and actual global minimum is {}'.format(
     minimum_found, f(real_minimum)))
 print('Position was {} and actual global minimum position is {}'.format(
     position, real_minimum))
-
+print('Execution time was: ',finish)

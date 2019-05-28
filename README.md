@@ -7,17 +7,21 @@ Python SAPSO algorithm implemetation
 
    SAPSO basic implementation, allows to chose between linear and parallel gradient calculation
 
+- *psapso.py*:
+
+   Parallel SAPSO *beta* implementation
+
 - *test_functions.py*:
    
-   A module composed of mathematical functions for SAPSO performance tests, including funcitons minimuns and search space
+   A module composed of mathematical functions for optmization tests
 
 - *test_parameters.py*:
 	
-	An example on how to build and *parameters* dictionary to be passed as the optmizer parameters of optmization
+	An example on how to build a *parameters* dictionary to be passed as the optmizer parameters of optmization
 
-- *using_sapso.py*:
+- *usage_example.py*:
 
-  An example of the optmizer usage
+  An example of the optmizers usage
 
 - *example_file_name.py.lprof*:
 
