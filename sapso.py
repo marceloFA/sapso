@@ -72,4 +72,4 @@ def sapso(parameters):
         if optmizer_counter > stop_counter: break
     grad_work_pool.close()
     grad_work_pool.terminate()
-    return best_position, best_fitness
+    return best_position, best_fitness, i+1
