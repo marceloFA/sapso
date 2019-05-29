@@ -34,10 +34,10 @@ def get_gradient(particle):
     return gradient
 
                  
-def calculate_velocity(velocity, swarm, importance, gradient, inertia, best_position, v_max, dir_, n, pool):
+def calculate_velocity(velocity, swarm, importance, gradient, inertia, best_position, v_max, dir_, n, pool, chunksize):
     '''Calculates swarm velocities'''
     # Expensive initiation, do not know how to make it computationally cheaper!
-    velocity = pool.starmap(get_velocity, zip(velocity, swarm, importance, gradient, [inertia]*n, [dir_]*n, [best_position]*n))
+    velocity = pool.starmap(get_velocity, zip(velocity, swarm, importance, gradient, [inertia]*n, [dir_]*n, [best_position]*n), chunksize=chunksize)
     velocity = np.array(velocity)
     #Validate it:
     velocity[velocity > v_max] = v_max
@@ -45,9 +45,9 @@ def calculate_velocity(velocity, swarm, importance, gradient, inertia, best_posi
     
     return velocity
 
-def calculate_gradient(swarm, pool):
+def calculate_gradient(swarm, pool, chunksize):
     '''Calculates Gradient information'''
-    gradient = np.array(pool.map(get_gradient,swarm))
+    gradient = np.array(pool.map(get_gradient,swarm, chunksize=chunksize))
     return gradient
 
 
@@ -68,9 +68,9 @@ def update_swarm(swarm,velocity, importance, counter,n, n_dims, min_, max_):
                 importance[i] = 1
                 counter[i] = 0
 
-def update_fitness(swarm, function, pool):
+def update_fitness(swarm, function, pool, chunksize):
     '''Get new cost for all particles in the swarm'''
-    return np.array(pool.map(function,swarm))
+    return np.array(pool.map(function, swarm, chunksize=chunksize))
 
 def update_best_found(swarm, fitness, best_fitness, best_position, n):
     '''After an iteration the best fitness found must be updated'''
@@ -109,13 +109,13 @@ def calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n):
         n = number of particles (global)
         dir_ = direction of particle's movement (global var)
     '''
-    if (dir_ > 0 and diversity < d_low):  # must repulse
+    if (dir_ == 1 and diversity < d_low):  # must repulse
         dir_ = -1
         importance = np.ones(n)
-    elif (dir_ < 0 and diversity > d_high):  # must attract
+    elif (dir_ == -1 and diversity > d_high):  # must attract
         dir_ = 1
         importance = np.zeros(n)
-    return importance
+    return importance, dir_
 
 
 def calculate_diversity(swarm, n, L):
@@ -127,10 +127,10 @@ def calculate_diversity(swarm, n, L):
     return diversity
 
 
-def stop_condition(stop_counter,best_fitness,last_best_fitness,stop):    
-    if np.all((best_fitness - last_best_fitness) < stop):
-        stop_counter += 1
-    return stop_counter
+def update_stagnation(best_fitness,last_best_fitness,stop):    
+    if abs(best_fitness - last_best_fitness) <= stop:
+        return True
+    return False
 
 
 class Bunch(object):

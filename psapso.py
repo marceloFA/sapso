@@ -5,7 +5,7 @@ from test_functions import TestFunctions
 from auxiliar_psapso import *
 
 def psapso(parameters):
-    '''The Parallel Semi Autonomus particle swarm optmizer'''
+    '''The Parallel Semi Autonomous particle swarm optmizer'''
     # Define some parameters:
     p = Bunch(parameters)
     n = p.n
@@ -21,8 +21,6 @@ def psapso(parameters):
     d_low = p.d_low
     d_high = p.d_high
     f_name = p.f_name
-    parallel = p.parallel
-
 
     dir_ = 1
     diversity = 0.                
@@ -33,16 +31,17 @@ def psapso(parameters):
     function = getattr(TestFunctions(), f_name)
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
-    optmizer_counter = 0
-    stop_counter = 100 # n iters without new best_global
+    stagnation = 0
+    limit = 50 # n_iters with no significant improvement on best position
 
     # Get dict of params to be passed to work pools according to tasks needs:
     params = {'n_dims':n_dims, 'v_max':v_max, 'f':function, 'c1':c1, 'c2':c2, 'v_max':v_max}
     
     # Instantiate Pools:
     cores = cpu_count()
+    chunksize = int(n/cores)
     cost_work_pool = Pool(cores)
-    velocity_work_pool = Pool(cores, initializer=make_params_global, initargs=(params,))
+    vel_work_pool = Pool(cores, initializer=make_params_global, initargs=(params,))
     grad_work_pool = Pool(cores, initializer=make_params_global, initargs=(params,))
     
     # Initialize components:
@@ -54,7 +53,7 @@ def psapso(parameters):
     fitness = np.array(list(map(function, swarm)))
     best_fitness = np.amin(fitness)
     best_position = swarm[np.where(fitness == best_fitness)][0]    
-    gradient = calculate_gradient(swarm, grad_work_pool)
+    gradient = calculate_gradient(swarm, grad_work_pool, chunksize)
     
     # 1 Main Loop:   
     for i in range(m):
@@ -62,18 +61,21 @@ def psapso(parameters):
         last_best_fitness = np.copy(best_fitness)
         inertia = (max_inertia - i) * z
         
-        gradient = calculate_gradient(swarm, grad_work_pool)
-        velocity = calculate_velocity(velocity, swarm, importance, gradient, inertia, best_position, v_max, dir_,n, velocity_work_pool)
+        velocity = calculate_velocity(velocity, swarm, importance, gradient, inertia, best_position, v_max, dir_,n, vel_work_pool, chunksize)
         update_swarm(swarm,velocity, importance, counter,n, n_dims, min_, max_)
-        fitness = update_fitness(swarm, function, cost_work_pool)
+        fitness = update_fitness(swarm, function, cost_work_pool, chunksize)
         best_fitness, best_position = update_best_found(swarm, fitness, best_fitness, best_position, n)
         
         # SAPSO information:
         update_importance(importance, swarm, fitness, last_fitness, counter, best_position, n, c_max, epsilon, epsilon_2)
         diversity = calculate_diversity(swarm, n, L)
-        importance = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
-        gradient = calculate_gradient(swarm, grad_work_pool)
-        stop_counter = stop_condition(stop_counter,best_fitness,last_best_fitness,stop)
-        # Stop criterion
-        if optmizer_counter > stop_counter: break
-    return best_position, best_fitness
+        importance, dir_ = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
+        gradient = calculate_gradient(swarm, grad_work_pool, chunksize)
+        if update_stagnation(best_fitness,last_best_fitness,stop):
+            stagnation += 1
+        # Stop criterion:
+        #if stagnation >= limit: 
+            #break
+        #if dir_ is not 1: print(dir_)
+        print('{},{},{},'.format(diversity,dir_,best_fitness))
+    return best_position, best_fitness, i
