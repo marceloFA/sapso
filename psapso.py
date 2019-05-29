@@ -31,8 +31,8 @@ def psapso(parameters):
     function = getattr(TestFunctions(), f_name)
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
-    stagnation = 0
-    limit = 50 # n_iters with no significant improvement on best position
+    #stagnation = 0
+    #limit = 50 # n_iters with no significant improvement on best position
 
     # Get dict of params to be passed to work pools according to tasks needs:
     params = {'n_dims':n_dims, 'v_max':v_max, 'f':function, 'c1':c1, 'c2':c2, 'v_max':v_max}
@@ -58,7 +58,7 @@ def psapso(parameters):
     # 1 Main Loop:   
     for i in range(m):
         last_fitness = np.copy(fitness)
-        last_best_fitness = np.copy(best_fitness)
+        #last_best_fitness = np.copy(best_fitness)
         inertia = (max_inertia - i) * z
         
         velocity = calculate_velocity(velocity, swarm, importance, gradient, inertia, best_position, v_max, dir_,n, vel_work_pool, chunksize)
@@ -71,11 +71,10 @@ def psapso(parameters):
         diversity = calculate_diversity(swarm, n, L)
         importance, dir_ = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
         gradient = calculate_gradient(swarm, grad_work_pool, chunksize)
-        if update_stagnation(best_fitness,last_best_fitness,stop):
-            stagnation += 1
+        #if update_stagnation(best_fitness,last_best_fitness,stop):
+        #    stagnation += 1
+        
         # Stop criterion:
         #if stagnation >= limit: 
             #break
-        #if dir_ is not 1: print(dir_)
-        print('{},{},{},'.format(diversity,dir_,best_fitness))
-    return best_position, best_fitness, i
+    return best_position, best_fitness

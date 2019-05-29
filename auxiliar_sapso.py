@@ -47,7 +47,7 @@ def calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n):
     elif (dir_ < 0 and diversity > d_high):  # must attract
         dir_ = 1
         importance = np.zeros(n)
-    return importance
+    return dir_, importance
 
 
 def get_gradient_parallel(particle):

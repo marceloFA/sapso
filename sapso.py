@@ -66,7 +66,7 @@ def sapso(parameters):
 
         update_importance(importance, swarm, fitness, last_fitness, counter, best_position, n, c_max, epsilon, epsilon_2)
         diversity = calculate_diversity(swarm, n, L)
-        importance = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
+        dir_, importance = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
         stop_counter = stop_condition(stop_counter, best_fitness, last_best_fitness, stop)
         # Stop criterion:
         if optmizer_counter > stop_counter: break

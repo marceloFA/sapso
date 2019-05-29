@@ -1,7 +1,7 @@
 
 parameters = {
 	'n' : 20,                  # Particles
-	'm' : 1000 ,               # Iterations
+	'm' : 2000 ,               # Iterations
 	'stop' : 1e-9,             # Stop criterion
 	'n_dimensions' : 10,        # Number of dimensions     
 	'min_inertia' : .9,        # Inertial weight
@@ -12,6 +12,6 @@ parameters = {
 	'epsilon' : 1e-2,          # If the algorithm cannot improve fitness it must stop
 	'd_low' : .2,               # Lower threshold for diversity control
 	'd_high' : .225,            # Upper threshold for diversity control
-	'f_name' : 'rosenbrock',        # Select your optmization function
+	'f_name' : 'sphere',        # Select your optmization function
 	'parallel': True,          # Defines if parallel gradient calculation happens
 	}
