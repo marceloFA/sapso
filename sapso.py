@@ -34,8 +34,8 @@ def sapso(parameters):
     function = getattr(TestFunctions(), f_name)
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
-    optmizer_counter = 0
-    stop_counter = 100 # n iters without new best_global
+    stagnation = 0
+    limit = 200 # n_iters with no significant improvement on best position
     # Initialize components:
     velocity = np.zeros((n, n_dims))
     gradient = np.zeros((n, n_dims))
@@ -67,9 +67,15 @@ def sapso(parameters):
         update_importance(importance, swarm, fitness, last_fitness, counter, best_position, n, c_max, epsilon, epsilon_2)
         diversity = calculate_diversity(swarm, n, L)
         dir_, importance = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
-        stop_counter = stop_condition(stop_counter, best_fitness, last_best_fitness, stop)
+        
         # Stop criterion:
-        if optmizer_counter > stop_counter: break
+        if stop_condition(best_fitness,last_best_fitness,stop):
+            stagnation += 1
+        else:
+            stagnation = 0
+        if stagnation >= limit: 
+            break
+
     grad_work_pool.close()
     grad_work_pool.terminate()
-    return best_position, best_fitness, i+1
+    return best_position, best_fitness, i

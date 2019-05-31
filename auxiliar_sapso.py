@@ -137,10 +137,10 @@ def update_best_global(particle, fitness, best_fitness, best_position):
     return best_fitness, best_position
 
 
-def stop_condition(stop_counter,best_fitness,last_best_fitness,stop):    
-    if np.all((best_fitness - last_best_fitness) < stop):
-        stop_counter += 1
-    return stop_counter
+def stop_condition(best_fitness,last_best_fitness,stop):    
+    if np.all(abs(best_fitness - last_best_fitness) <= stop):
+        return True
+    return False
 
 class Bunch(object):
     '''Saves parameters to the local namespace where

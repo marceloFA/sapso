@@ -16,10 +16,15 @@ class TestFunctions():
   matyas_min = np.array([0.,0.])
   levi_13_min = np.array([1.,1.])
   himmelblau_min = np.array([3.,2.])
+  # update these later:
+  alpine_min = np.array([0.,0.])
+  griewank_min = np.array([0.,0.])
+  levi_min = np.array([0.,0.])
+
 
   #Search Space:
   rastrigin_space = [-5.12,5.12]
-  ackley_space = [-5.,5.]
+  ackley_space = [-50.,50.]
   sphere_space = [-10.,10.]
   rosenbrock_space = [-10.,10.]
   beale_space = [-4.5,4.5]
@@ -27,13 +32,25 @@ class TestFunctions():
   booth_space = [-10.,10.]
   bukin_space = [-15.,3.]
   matyas_space = [-10.,10.]
+  levi_min = [-10.,10.]
   levi_13_space = [-10.,10.]
   himmelblau_space = [-5.,5.]
+  alpine_space = [0.,20.]
+  ellipsoid_space = [-5.12,5.12]
+  griewank_space = [-100.,100.]
+  shaffer_2_space = [-100.,100.]
 
   
   def rosenbrock(self,x):
     """The Rosenbrock function"""
-    return sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
+    dx = 0.0
+    sum = 0.0
+    for i in range(len(x)-1):
+      dx = x[i + 1] - x[i] * x[i]
+      sum += 100.0 * dx * dx
+      dx = 1.0 - x[i]
+      sum += dx * dx
+    return sum
 
 
   def sphere(self,x):
@@ -91,3 +108,32 @@ class TestFunctions():
   def bukin(self, x):
     '''The Bukin N.6 function'''
     return 100*np.sqrt(x[1]-0.001*x[0]**2) + 0.001 * abs(x[0]+10)
+
+
+  def griewank(self,x):
+    '''The Griewank test function'''
+    product = 1
+    sum_ = sum(i*i for i in x)
+  
+    for i in range(len(x)):
+      product *= np.cos(x[i] / np.sqrt(i + 1))
+    return 1 + sum_ / 4000 - product
+
+
+  def alpine(self,x):
+    '''The Alpine test function'''
+    return sum(np.absolute(i * np.sin(i) + 0.1 * i) for i in x)
+
+
+  def ellipsoid(self,x):
+    '''The Ellipsoid  function'''
+    sum_ = sum(i*i for i in x)
+    return sum([sum_]*len(x))
+
+
+  def schaffer_2(self,x):
+    '''The Schaffer n2  function'''
+    factor1 = np.power(np.sin(x[0]**2-x[1]**2), 2)-0.5
+    factor2 = (1+ 0.001*(x[0]**2+x[1]**2))**2
+    return 0.5 + factor1/factor2
+    
