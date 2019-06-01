@@ -1,4 +1,4 @@
-f_name,n_dims,min_found,n_iters,exec_time,
+parallel,f_name,n_dims,min_found,n_iters,exec_time,
 False,sphere,2,0.0,201,2.374840021133423,
 False,sphere,2,0.0,202,2.459458112716675,
 False,sphere,2,0.0,202,2.437681198120117,
