@@ -14,7 +14,8 @@ position, minimum_found, i = sapso(parameters)
 exec_time = time() - start
 
 # output
-print('{f_name},{n_dims},{min_found},{n_iters},{exec_time},'.format(
+print('{parallel},{f_name},{n_dims},{min_found},{n_iters},{exec_time},'.format(
+    parallel = parameters['parallel'],
     f_name = parameters['f_name'],
     n_dims = parameters['n_dims'],
     min_found = minimum_found,
