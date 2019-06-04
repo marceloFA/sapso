@@ -1,8 +1,8 @@
 
 parameters = {
-	'n' : 100,                  # Particles
-	'm' : 3000,                # Iterations
-	'stop' : 1e-10,             # Stop criterion
+	'n' : 100,                 # Particles
+	'm' : 5000,                # Iterations
+	'stop' : 1e-10,            # Stop criterion
 	'n_dimensions' : 2,        # Number of dimensions     
 	'min_inertia' : .9,        # Inertial weight
 	'max_inertia' : .4,        # Inertial weight

@@ -3,6 +3,8 @@ import numpy as np
 from multiprocessing import Pool, cpu_count
 from test_functions import TestFunctions
 from auxiliar_sapso import *
+
+
 def sapso(parameters):
     ''' The Semi Autonomus particle swarm optmizer. 
         This version implements a parallel calculation of 
@@ -35,7 +37,8 @@ def sapso(parameters):
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
     stagnation = 0
-    limit = 200 # n_iters with no significant improvement on best position
+    limit = 500 # n_iters with no significant improvement on best position
+    
     # Initialize components:
     velocity = np.zeros((n, n_dims))
     gradient = np.zeros((n, n_dims))
@@ -46,17 +49,20 @@ def sapso(parameters):
     best_fitness = np.amin(fitness)
     best_position = swarm[np.where(fitness == best_fitness)][0]
 
-    #create group of data to be passed to a worker pool, in case its a parallel execution
+    # Create group of data to be passed to a worker pool, in case its a parallel execution
     grad_params = {'n_dims':n_dims, 'v_max': v_max, 'f': function}
     chunksize = int(n/cpu_count())
     grad_work_pool = Pool(cpu_count(), initializer=make_global, initargs=(grad_params,))
-    
+    grad_skip_count = 0
+
     # Main loop:
     for i in range(m):
         last_fitness = np.copy(fitness)
         last_best_fitness = np.copy(best_fitness)
         inertia = (max_inertia - i) * z
-        gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, chunksize, parallel)
+
+        if not np.all(gradient):
+            gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, chunksize, parallel)
 
         for k in range(n):
             velocity[k] = calculate_velocity( velocity[k], swarm[k], importance[k], gradient[k], n_dims, inertia, c1, c2, best_position, v_max, dir_)
@@ -69,12 +75,11 @@ def sapso(parameters):
         dir_, importance = calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n)
         
         # Stop criterion:
-        if stop_condition(best_fitness,last_best_fitness,stop):
-            stagnation += 1
-        else:
-            stagnation = 0
+        stagnation += 1 if stop_condition(best_fitness,last_best_fitness,stop) else 0
         if stagnation >= limit: 
             break
+
+        #print('{},{},{}'.format(diversity,dir_,best_fitness))
 
     grad_work_pool.close()
     grad_work_pool.terminate()

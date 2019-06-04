@@ -80,12 +80,15 @@ def get_gradient_seq(particle, function, n_dims, v_max):
     return gradient
 
 
-def calculate_gradient(swarm, function,v_max, n_dims, pool, chunksize, parallel_execution):
+def calculate_gradient(swarm, function, v_max, n_dims, pool, chunksize, parallel_execution):
     '''Calculates Gradient information'''
+    # No need for gradient information:
+    #if np.all(gradient): return gradient
+
     if parallel_execution:
         gradient = np.array(pool.map(get_gradient_parallel, swarm, chunksize=chunksize))
     else:
-        gradient = [get_gradient_seq(particle, function, n_dims, v_max) for particle in swarm]
+        gradient = np.array([get_gradient_seq(particle, function, n_dims, v_max) for particle in swarm])
 
     return gradient
         

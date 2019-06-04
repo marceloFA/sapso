@@ -110,11 +110,11 @@ def calculate_dir_and_importance(importance, diversity, d_low, d_high, dir_, n):
         dir_ = direction of particle's movement (global var)
     '''
     if (dir_ == 1 and diversity < d_low):  # must repulse
-        dir_ = -1
-        importance = np.ones(n)
+        self.dir_ = -1
+        sel.importance = np.ones(n)
     elif (dir_ == -1 and diversity > d_high):  # must attract
-        dir_ = 1
-        importance = np.zeros(n)
+        self.dir_ = 1
+        self.importance = np.zeros(n)
     return importance, dir_
 
 
@@ -127,8 +127,8 @@ def calculate_diversity(swarm, n, L):
     return diversity
 
 
-def update_stagnation(best_fitness,last_best_fitness,stop):    
-    if abs(best_fitness - last_best_fitness) <= stop:
+def stop_condition(best_fitness,last_best_fitness,stop):    
+    if np.all(abs(best_fitness - last_best_fitness) <= stop):
         return True
     return False
 

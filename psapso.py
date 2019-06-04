@@ -32,7 +32,7 @@ def psapso(parameters):
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
     stagnation = 0
-    limit = 50 # n_iters with no significant improvement on best position
+    limit = 300 # n_iters with no significant improvement on best position
 
     # Get dict of params to be passed to work pools according to tasks needs:
     params = {'n_dims':n_dims, 'v_max':v_max, 'f':function, 'c1':c1, 'c2':c2, 'v_max':v_max}
@@ -74,7 +74,12 @@ def psapso(parameters):
         if update_stagnation(best_fitness,last_best_fitness,stop):
             stagnation += 1
         
-        # Stop criterion:
+       # Stop criterion:
+        if stop_condition(best_fitness,last_best_fitness,stop):
+            stagnation += 1
+        else:
+            stagnation = 0
         if stagnation >= limit: 
             break
+
     return best_position, best_fitness

@@ -1,4 +1,4 @@
-from sapso import sapso as pso
+from new_version import pso
 from test_functions import TestFunctions
 from test_parameters import parameters
 from time import time
@@ -18,3 +18,4 @@ print('Position was {} and actual global minimum position is {}'.format(
     position, real_minimum))
 print('Execution time was: ',finish,' seconds')
 print('Finished at iteration {i}'.format(i=i))
+#print('Grad info was not calculated, as it was not needed in {} iterations'.format(grad_skip_count))
