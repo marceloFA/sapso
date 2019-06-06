@@ -7,7 +7,7 @@ from time import time
 f_name = parameters['f_name']
 start = time()
 results = pso(parameters)
-print(results['global_best_fitness'])
+print(results)
 finish = time() - start
 # Printing out results:
 #real_minimum = getattr(TestFunctions(), f_name + '_min')

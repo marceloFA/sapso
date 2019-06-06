@@ -1,9 +1,10 @@
 import numpy as np
-from multiprocessing import Manager, Pool, Lock
+from multiprocessing import Manager, Pool, Lock, current_process
+
 class Particle():
     ''' This class defines a particle.
         An instance of a particle contains fundamental information for psapso execution '''
-    
+
     def __init__(self, position, velocity, function, importance, direction, stagnation, v_max, n_dims, min_, max_, c1, c2, epsilon_1, epsilon_2, c_max, d_low, d_high):
         ''' Initiates a particle '''
         self.position = position
@@ -142,14 +143,14 @@ def evaluate_swarm(swarm):
     index = np.where(fitness_list == best_fitness)[0][0]
     best_position = swarm[index].position
     stagnation = 0
-    
+
     for i in range(n_iters):
-        
         #check if a new global_best was found in other swarms:
         if (i % migration_interval == 0):
-            if shared_best_fitness.value < best_fitness:
-                best_fitness = shared_best_fitness.value
-                best_position = shared_best_position.value
+            with acess_shared_info_lock:
+                if shared_best_fitness.value < best_fitness:
+                    best_fitness = shared_best_fitness.value
+                    best_position = shared_best_position.value
             
         #sapso information:
         diversity = calculate_diversity(swarm, n, L)
@@ -170,8 +171,8 @@ def evaluate_swarm(swarm):
                 
             particle.update_importance(best_position)
         # Eventually let every other swarm know that a new global best was found:
-        if best_fitness < shared_best_fitness.value:
-            with change_best_lock:
+        with acess_shared_info_lock:
+            if best_fitness < shared_best_fitness.value:
                 shared_best_fitness.value = best_fitness
                 shared_best_position.value= best_position
         
@@ -179,9 +180,15 @@ def evaluate_swarm(swarm):
         stagnation += 1 if stop_condition(best_fitness, last_best_fitness, stop) else 0
         if stagnation >= stagnation_limit: 
             break
-            
+    with acess_shared_info_lock:
+        shared_all_bests.append((best_fitness,best_position))
+        print(shared_all_bests)
+    '''    
+    print('process {} says b_fitness is:: {}'.format(current_process().name, best_fitness))
+    with acess_shared_info_lock:
+        print('and b_global_fitness is: {}'.format(shared_best_fitness.value))
+    '''
     return swarm
-
 
 
 def calculate_diversity(swarm, n, L):
@@ -209,18 +216,20 @@ def stop_condition(best_fitness,last_best_fitness,stop):
     return False
 
 
-def prepare_eval_pool(n_particles, n_iterations, n_dims, diagonal_length, maximum_inertia, z_component, minimum_improvement, limit, mi):
-    '''Make some variables global, as they need to be accessed from every process
-        And create a pool for evaluation of swarms
-    '''
-    manager = Manager()
-    global shared_best_fitness, shared_best_position, change_best_lock
-    change_best_lock = Lock()
-    shared_best_fitness = manager.Value(np.float64,0.)
-    shared_best_position = manager.Value(np.ndarray,np.array([0.]*n_dims))
+def make_global(n_particles, n_iterations, n_dims, diagonal_length, maximum_inertia, z_component, minimum_improvement, best_fitness, best_position, all_bests, acess_info_lock, limit, mi):
+    ''' Used to pass global vars in a dict format
+        to a work pool'''
+
+    global shared_best_fitness, shared_best_position, acess_shared_info_lock, shared_all_bests
+    acess_shared_info_lock = acess_info_lock
+    shared_best_fitness = best_fitness
+    shared_best_position = best_position
+    shared_all_bests = all_bests
+    
     global stagnation_limit, migration_interval
     migration_interval = mi
     stagnation_limit = limit  # n_iters with no significant improvement on best position
+    
     global n, max_inertia, z, n_iters, stop, L
     n = n_particles
     max_inertia = maximum_inertia
@@ -228,6 +237,4 @@ def prepare_eval_pool(n_particles, n_iterations, n_dims, diagonal_length, maximu
     n_iters = n_iterations
     stop = minimum_improvement
     L = diagonal_length
-
-    particle_pool = Pool(initargs=(n, n_iters, n_dims, L, max_inertia, z, stop, shared_best_fitness, shared_best_position, change_best_lock, stagnation_limit, migration_interval))
-    return particle_pool
+    
