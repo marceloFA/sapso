@@ -2,7 +2,7 @@
 import numpy as np
 from multiprocessing import Pool, cpu_count
 from test_functions import TestFunctions
-from auxiliar_sapso import *
+from sapso.helper import *
 
 
 def sapso(parameters):
@@ -14,7 +14,7 @@ def sapso(parameters):
     p = Bunch(parameters)
     n = p.n
     m = p.m
-    stop = p.stop
+    stop = p.minimum_improvement
     n_dims = p.n_dimensions
     min_inertia = p.min_inertia
     max_inertia = p.max_inertia
@@ -25,7 +25,8 @@ def sapso(parameters):
     d_low = p.d_low
     d_high = p.d_high
     f_name = p.f_name
-    parallel = p.parallel
+    parallel = p.parallel_grad
+    limit = p.stagnation_limit
 
     dir_ = 1
     diversity = 0.                
@@ -37,7 +38,6 @@ def sapso(parameters):
     counter = np.zeros(n)
     L = np.linalg.norm([max_ - min_ for _ in range(n_dims)])
     stagnation = 0
-    limit = 500 # n_iters with no significant improvement on best position
     
     # Initialize components:
     velocity = np.zeros((n, n_dims))
@@ -61,7 +61,7 @@ def sapso(parameters):
         last_best_fitness = np.copy(best_fitness)
         inertia = (max_inertia - i) * z
 
-        if not np.all(gradient):
+        if not np.all(importance):
             gradient = calculate_gradient(swarm, function,v_max, n_dims, grad_work_pool, chunksize, parallel)
 
         for k in range(n):
@@ -83,4 +83,4 @@ def sapso(parameters):
 
     grad_work_pool.close()
     grad_work_pool.terminate()
-    return best_position, best_fitness, i
+    return best_position, best_fitness

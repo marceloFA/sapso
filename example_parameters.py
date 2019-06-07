@@ -1,11 +1,11 @@
 parameters = {
-	'n' : 50,                     # Particles
+	'n' : 100,                     # Particles
 	'm' : 5000,                    # Iterations
     'n_swarms': 10,                # Number of swarm (parallel execution)
     'migration_interval': 20,      # Exchange best found every few iterations
 	'stagnation_limit': 500,       # Number of consecutive stagnations before stop
  	'minimum_improvement' : 1e-10, # Below this stagnaiton condition is triggered
-	'n_dimensions' : 10,            # Number of dimensions     
+	'n_dimensions' : 2,            # Number of dimensions     
 	'min_inertia' : .9,            # Inertial weight
 	'max_inertia' : .4,            # Inertial weight
 	'c1' : 2,                      # Cognitive coefficient
@@ -15,4 +15,5 @@ parameters = {
 	'd_low' : .2,    	           # Lower threshold for diversity control
 	'd_high' : .225,               # Upper threshold for diversity control
 	'f_name' : 'rosenbrock',       # Select your optmization function
+	'parallel_grad': True          # Whether gradient will be calculated in parallel (sequential sapso)
 	}

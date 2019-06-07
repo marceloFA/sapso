@@ -2,11 +2,10 @@ import numpy as np
 from multiprocessing import Manager, Pool, Lock, current_process
 
 class Particle():
-    ''' This class defines a particle.
-        An instance of a particle contains fundamental information for psapso execution '''
+    ''' This class defines a particle. Particles are used to form a swarm'''
 
     def __init__(self, position, velocity, function, importance, direction, stagnation, v_max, n_dims, min_, max_, c1, c2, epsilon_1, epsilon_2, c_max, d_low, d_high):
-        ''' Initiates a particle '''
+        ''' Initiate a particle '''
         self.position = position
         self.velocity = velocity
         self.objective_function = function
@@ -32,7 +31,7 @@ class Particle():
 
 
     def update_velocity(self, inertia, best_position):
-        ''' Take some parameters and calculates particle's velocity '''
+        ''' Take some parameters and calculates a particle's velocity '''
         size = self.n_dims * 2
         phi = np.random.standard_normal(size=size)
         phi_1 = phi[:size // 2]
@@ -50,7 +49,7 @@ class Particle():
 
 
     def update_gradient(self):
-        ''' Calculates gradient of a particle '''
+        ''' Calculate gradient of a particle '''
         # No grad neeeded:
         if self.importance == 1:
             return
@@ -70,7 +69,7 @@ class Particle():
         
 
     def update_position(self):
-        '''Updates a particle's position '''
+        '''Update a particle's position '''
         self.position += self.velocity
 
         # Validate it:
@@ -92,7 +91,7 @@ class Particle():
 
 
     def update_importance(self, best_position):
-        ''' Updates the importance factor'''
+        ''' Update the importance factor'''
         # Check to see if we are improving fitness through iterations:
         if self.importance == 0:
             if abs(self.fitness - self.last_fitness) <= self.epsilon_1:
@@ -121,9 +120,12 @@ class Particle():
             self.direction = 1
             self.importance = 0
 
+
 ##############################################################################################################
+
+
 def initiate_swarm(n, n_dims, max_, min_, function, v_max, c1, c2, epsilon_1, epsilon_2, c_max, d_low, d_high):
-    ''' Initiate a swarm (group of particles)'''
+    ''' Initiate a swarm (group of particles) '''
     swarm = []
     for _ in range(n):
         position = np.array([(min_+ np.random.uniform() * (max_ - min_)) for _ in range(n_dims)])
@@ -137,13 +139,17 @@ def initiate_swarm(n, n_dims, max_, min_, function, v_max, c1, c2, epsilon_1, ep
 
 
 def evaluate_swarm(swarm):
-    '''Evaluates a swarm, from beginning to end '''
+    '''This method evaluates a swarm of particle.
+        The process of evaluation includes sharing the best particle in the swarm
+        every few iterations with all the other swarm running in parallel.
+        At the end, the best particle found is save in a shared list of best particles.
+    '''
+    # Befores starting the optmization process, find the very first best position among particles
     fitness_list = np.array([particle.fitness for particle in swarm])
     best_fitness = np.amin(fitness_list)
     index = np.where(fitness_list == best_fitness)[0][0]
     best_position = swarm[index].position
     stagnation = 0
-
     for i in range(n_iters):
         #check if a new global_best was found in other swarms:
         if (i % migration_interval == 0):
@@ -151,6 +157,7 @@ def evaluate_swarm(swarm):
                 if shared_best_fitness.value < best_fitness:
                     best_fitness = shared_best_fitness.value
                     best_position = shared_best_position.value
+                    #print('process {} recieved a new_best_from another swarm'.format(current_process().name))
             
         #sapso information:
         diversity = calculate_diversity(swarm, n, L)
@@ -170,29 +177,28 @@ def evaluate_swarm(swarm):
                 best_position = particle.position
                 
             particle.update_importance(best_position)
+
         # Eventually let every other swarm know that a new global best was found:
         with acess_shared_info_lock:
             if best_fitness < shared_best_fitness.value:
                 shared_best_fitness.value = best_fitness
                 shared_best_position.value= best_position
+                #print('process {} updated the global_best '.format(current_process().name))
         
         # Check for stop condition:
         stagnation += 1 if stop_condition(best_fitness, last_best_fitness, stop) else 0
         if stagnation >= stagnation_limit: 
             break
+
+    # A swarm is finished by saving it's best particle in the shared list of best results
     with acess_shared_info_lock:
         shared_all_bests.append((best_fitness,best_position))
-        print(shared_all_bests)
-    '''    
-    print('process {} says b_fitness is:: {}'.format(current_process().name, best_fitness))
-    with acess_shared_info_lock:
-        print('and b_global_fitness is: {}'.format(shared_best_fitness.value))
-    '''
+
     return swarm
 
 
 def calculate_diversity(swarm, n, L):
-    """ Calculates dieversity of the swarm"""
+    """ Calcualte swarm diversity"""
     swarm_position = np.array([particle.position for particle in swarm])
     mean = np.mean(swarm_position, axis=0)
     minus_mean = np.array([particle - mean for particle in swarm_position]) ** 2
@@ -201,24 +207,20 @@ def calculate_diversity(swarm, n, L):
     return diversity
 
 
-
-#############################################################################################
-# Helper functions
-class Bunch(object):
-    '''Saves parameters to the local namespace as individual variables'''
-
-    def __init__(self, parameters):
-        self.__dict__.update(parameters)
-
-def stop_condition(best_fitness,last_best_fitness,stop):    
+def stop_condition(best_fitness,last_best_fitness,stop): 
+    ''' Check if no improvement in optmization was archieved.
+    If so, return true to increment stagnation counter. '''   
     if np.all(abs(best_fitness - last_best_fitness) <= stop):
         return True
     return False
 
 
 def make_global(n_particles, n_iterations, n_dims, diagonal_length, maximum_inertia, z_component, minimum_improvement, best_fitness, best_position, all_bests, acess_info_lock, limit, mi):
-    ''' Used to pass global vars in a dict format
-        to a work pool'''
+    ''' Python currently has a limitation in passing initial arguements to a pool of workers
+        The workaround is to set global variables, with an initializer method, that will further
+        pass all those variables to the workers in the pool. 
+        When the pool is finished all these global variables will be deleted atomatically.
+        Even though this is no good practice, it's unavoidable as there's no other solution'''
 
     global shared_best_fitness, shared_best_position, acess_shared_info_lock, shared_all_bests
     acess_shared_info_lock = acess_info_lock
@@ -228,7 +230,7 @@ def make_global(n_particles, n_iterations, n_dims, diagonal_length, maximum_iner
     
     global stagnation_limit, migration_interval
     migration_interval = mi
-    stagnation_limit = limit  # n_iters with no significant improvement on best position
+    stagnation_limit = limit 
     
     global n, max_inertia, z, n_iters, stop, L
     n = n_particles
@@ -237,4 +239,10 @@ def make_global(n_particles, n_iterations, n_dims, diagonal_length, maximum_iner
     n_iters = n_iterations
     stop = minimum_improvement
     L = diagonal_length
-    
+
+
+class Bunch(object):
+    '''Safelly pass a bunch of parameters passed to the optmizer via the 'parameters' dict
+     to the local namespace as individual variables'''
+    def __init__(self, parameters):
+        self.__dict__.update(parameters)

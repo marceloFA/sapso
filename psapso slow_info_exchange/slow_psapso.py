@@ -2,7 +2,7 @@
 import numpy as np
 from multiprocessing import Pool, cpu_count
 from test_functions import TestFunctions
-from auxiliar_psapso import *
+from slow_psapso_helper import *
 
 def psapso(parameters):
     '''The Parallel Semi Autonomous particle swarm optmizer'''

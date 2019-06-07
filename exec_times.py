@@ -1,24 +1,28 @@
-from sapso import sapso
-from test_functions import TestFunctions
-from test_parameters import parameters
 from sys import argv
 from time import time
-
+from statistics import mean
+# Local imports
+from psapso.optmizer import parallel_sapso
+from example_parameters import parameters
+ 
 parameters['n_dims'] = argv[1]
-parameters['parallel'] = True if argv[3] is '1' else False
+parameters['n_sarms'] = argv[2]
 f_name = ['sphere','rosenbrock','rastrigin','griewank','ackley','ellipsoid','alpine']
-index = int(argv[2])
+index = int(argv[3])
 parameters['f_name'] = f_name[index]
+
 start  = time()
-position, minimum_found, i = sapso(parameters)
+best_particles = parallel_sapso(parameters)
 exec_time = time() - start
 
-# output
-print('{parallel},{f_name},{n_dims},{min_found},{n_iters},{exec_time},'.format(
-    parallel = parameters['parallel'],
+best_fitness = [best[0] for best in best_particles] # get only the fitness
+
+# formatted output to be written on the csv file:
+print('{f_name},{n_dims},{n_swarms},{very_min},{mean_min},{exec_time},'.format(
     f_name = parameters['f_name'],
     n_dims = parameters['n_dims'],
-    min_found = minimum_found,
-    n_iters = i,
+    n_swarms = parameters['n_swarms'],
+    very_min = min(best_fitness),
+    mean_min = mean(best_fitness),
     exec_time = exec_time,
 ))
