@@ -1,4 +1,5 @@
 import numpy as np
+
 class TestFunctions():
   '''
     Test functions for single-objective optimization
@@ -137,3 +138,21 @@ class TestFunctions():
     factor2 = (1+ 0.001*(x[0]**2+x[1]**2))**2
     return 0.5 + factor1/factor2
     
+  #### CEC 2017 Test Functions:
+  def bent_cigar(self,x):
+    '''The Bent Cigar  function'''
+    return np.power(x[0],2) + 1_000_000 * np.sum([x[i] for i in range(1,len(x))])
+ 
+  def zakharov(self,x):
+    '''The Zakharov  function'''
+    factor = np.sum([n/2 for n in x])
+    return np.sum([x[i] for i in range(len(x))]) + np.power(factor,2) + np.power(factor,4)
+
+  def happy_cat(self,x):
+    '''The Happy cat function'''
+    n = len(x)
+    a_sum = np.sum([x[i] for i in range(n)])
+    b_sum = np.sum(x[i]-n for i in range(n))
+    f1 = np.pow(np.absolute(a_sum),.25)
+    f2 = .5 * np.sum()
+    return f1 + f2 +

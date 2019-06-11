@@ -1,5 +1,5 @@
 parameters = {
-	'n' : 100,                     # Particles
+	'n' : 50,                     # Particles
 	'm' : 5000,                    # Iterations
     'n_swarms': 10,                # Number of swarm (parallel execution)
     'migration_interval': 20,      # Exchange best found every few iterations

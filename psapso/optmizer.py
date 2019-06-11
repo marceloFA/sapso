@@ -20,7 +20,7 @@ def parallel_sapso(parameters):
     function = getattr(TestFunctions(), p.f_name)
 
     # Initiate a group of sarms:
-    group_of_swarms = [initiate_swarm(p.n, n_dims, max_, min_, function, v_max, p.c1, p.c2, p.epsilon, epsilon_2, p.c_max, p.d_low, p.d_high) for _ in range(p.n_swarms)]
+    group_of_swarms = [initiate_swarm(int(p.n/p.n_swarms), n_dims, max_, min_, function, v_max, p.c1, p.c2, p.epsilon, epsilon_2, p.c_max, p.d_low, p.d_high) for _ in range(p.n_swarms)]
     
     # Initiate the pool with global parameters:
     manager= Manager()
@@ -29,10 +29,10 @@ def parallel_sapso(parameters):
     best_position = manager.Value(np.ndarray, np.array([float('inf')]*n_dims))
     all_bests = manager.list()
     # processes=p.n_swarms,
-    particle_pool = Pool(initializer=make_global, initargs=(p.n, p.m, n_dims, diagonal_length, p.max_inertia, z_component, p.minimum_improvement, best_fitness, best_position, all_bests, acess_info_lock, limit, mi))
+    particle_pool = Pool(initializer=make_global, initargs=(int(p.n/p.n_swarms), p.m, n_dims, diagonal_length, p.max_inertia, z_component, p.minimum_improvement, best_fitness, best_position, all_bests, acess_info_lock, limit, mi))
     
     # Map swarms to individual processes and evaluate them:
-    results = particle_pool.map(evaluate_swarm, group_of_swarms)
+    results = particle_pool.map(evaluate_swarm, group_of_swarms, chunksize=int(p.n_swarms/cpu_count()))
     particle_pool.close()
     particle_pool.join()
 
