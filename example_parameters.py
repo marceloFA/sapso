@@ -1,7 +1,7 @@
 parameters = {
 	'n' : 50,                     # Particles
 	'm' : 5000,                    # Iterations
-    'n_swarms': 10,                # Number of swarm (parallel execution)
+    'n_swarms': 5,                # Number of swarm (parallel execution)
     'migration_interval': 20,      # Exchange best found every few iterations
 	'stagnation_limit': 500,       # Number of consecutive stagnations before stop
  	'minimum_improvement' : 1e-10, # Below this stagnaiton condition is triggered
@@ -14,6 +14,6 @@ parameters = {
 	'epsilon' : 1e-2,          	   # If the algorithm cannot improve fitness it must stop
 	'd_low' : .2,    	           # Lower threshold for diversity control
 	'd_high' : .225,               # Upper threshold for diversity control
-	'f_name' : 'rosenbrock',       # Select your optmization function
+	'f_name' : 'sphere',       # Select your optmization function
 	'parallel_grad': True          # Whether gradient will be calculated in parallel (sequential sapso)
 	}

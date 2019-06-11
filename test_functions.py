@@ -40,7 +40,9 @@ class TestFunctions():
   ellipsoid_space = [-5.12,5.12]
   griewank_space = [-100.,100.]
   shaffer_2_space = [-100.,100.]
-
+  bent_cigar_space = [-100.,100.]
+  zakharov_space = [-100.,100.]
+  happy_cat_space = [-100.,100.]
   
   def rosenbrock(self,x):
     """The Rosenbrock function"""
@@ -143,16 +145,21 @@ class TestFunctions():
     '''The Bent Cigar  function'''
     return np.power(x[0],2) + 1_000_000 * np.sum([x[i] for i in range(1,len(x))])
  
+
   def zakharov(self,x):
     '''The Zakharov  function'''
     factor = np.sum([n/2 for n in x])
     return np.sum([x[i] for i in range(len(x))]) + np.power(factor,2) + np.power(factor,4)
 
+
   def happy_cat(self,x):
     '''The Happy cat function'''
     n = len(x)
-    a_sum = np.sum([x[i] for i in range(n)])
-    b_sum = np.sum(x[i]-n for i in range(n))
-    f1 = np.pow(np.absolute(a_sum),.25)
-    f2 = .5 * np.sum()
-    return f1 + f2 +
+    sum_a = np.sum([np.power(x[i]-n,2) for i in range(n)])
+    sum_b = np.sum([np.power(x[i],2) for i in range(n)])
+    sum_c = np.sum([x[i] for i in range(n)])
+    
+    f1 = np.power(np.absolute(sum_a),.25)
+    f2 = (.5 * sum_b + sum_c)/n
+
+    return f1 + f2 + 0.5
