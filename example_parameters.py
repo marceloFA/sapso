@@ -5,7 +5,7 @@ parameters = {
     'migration_interval': 20,      # Exchange best found every few iterations
 	'stagnation_limit': 500,       # Number of consecutive stagnations before stop
  	'minimum_improvement' : 1e-10, # Below this stagnaiton condition is triggered
-	'n_dimensions' : 2,            # Number of dimensions     
+	'n_dimensions' : 20,            # Number of dimensions     
 	'min_inertia' : .9,            # Inertial weight
 	'max_inertia' : .4,            # Inertial weight
 	'c1' : 2,                      # Cognitive coefficient

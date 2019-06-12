@@ -32,7 +32,7 @@ def parallel_sapso(parameters):
     particle_pool = Pool(initializer=make_global, initargs=(int(p.n/p.n_swarms), p.m, n_dims, diagonal_length, p.max_inertia, z_component, p.minimum_improvement, best_fitness, best_position, all_bests, acess_info_lock, limit, mi))
     
     # Map swarms to individual processes and evaluate them:
-    results = particle_pool.map(evaluate_swarm, group_of_swarms, chunksize=int(p.n_swarms/cpu_count()))
+    results = particle_pool.map(evaluate_swarm, group_of_swarms)
     particle_pool.close()
     particle_pool.join()
 

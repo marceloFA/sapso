@@ -5,8 +5,8 @@ from statistics import mean
 from psapso.optmizer import parallel_sapso
 from example_parameters import parameters
  
-parameters['n_dims'] = argv[1]
-parameters['n_sarms'] = argv[2]
+parameters['n_dims'] = int(argv[1])
+parameters['n_swarms'] = int(argv[2])
 f_name = ['sphere','rosenbrock','rastrigin','griewank','ackley','ellipsoid','alpine','bent_cigar','zakharov','happy_cat']
 index = int(argv[3])
 parameters['f_name'] = f_name[index]
