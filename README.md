@@ -58,4 +58,4 @@ Python implemetations (sequential and parallel) of the semi autonomous particle 
 ### Acknowledgments
 
 * **Reginaldo Santos** - initial sapso paper and [implementation](https://github.com/regicsf2010/SAPSO)  
-* **Abner Cardoso** - initial studies on sapso and [implementation](https://bitbucket.org/abncardoso/psapso/src/master/)  
+* **Abner Cardoso** - initial studies on parallel sapso and [implementation](https://bitbucket.org/abncardoso/psapso/src/master/)  
