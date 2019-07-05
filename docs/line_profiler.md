@@ -6,7 +6,7 @@ kernprof is a convenient script for running either line_profiler or the Python s
 To profile a script with *line_profiler* you must do the following:
 
 ### 1 - Install line profiler with pip 
-````
+```
 pip install line_profiler
 ```
 ### 2 - run the line profiler
