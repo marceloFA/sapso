@@ -18,7 +18,7 @@ exec_time = time() - start
 best_fitness = [best[0] for best in best_particles] # get only the fitness
 
 # formatted output to be written on the csv file:
-print('{f_name},{n_dims},{n_swarms},{very_min},{mean_min},{exec_time},'.format(
+print('{f_name},{n_dims},{n_swarms},{very_min},{mean_min},{exec_time}'.format(
     f_name = parameters['f_name'],
     n_dims = parameters['n_dims'],
     n_swarms = parameters['n_swarms'],

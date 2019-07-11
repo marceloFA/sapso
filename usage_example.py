@@ -1,16 +1,16 @@
 from time import time
 # Local imports
-from sapso.optmizer import sapso
+#from sapso.optmizer import sapso
 from psapso.optmizer import parallel_sapso
 from test_functions import TestFunctions
 from example_parameters import parameters
 
 # Sequential sapso:
-start = time()
-best_position, best_fitness = sapso(parameters)
-finish = time() - start
-print('Execution time was: ',finish,' seconds')
-print('Best found was:\n',best_fitness,best_position)
+#start = time()
+#best_position, best_fitness = sapso(parameters)
+#finish = time() - start
+#print('Execution time was: ',finish,' seconds')
+#print('Best found was:\n',best_fitness,best_position)
 
 
 # Parallel sapso:

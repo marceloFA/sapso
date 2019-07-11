@@ -20,7 +20,7 @@ def parallel_sapso(parameters):
     function = getattr(TestFunctions(), p.f_name)
 
     # Initiate a group of sarms:
-    group_of_swarms = [initiate_swarm(int(p.n/p.n_swarms), n_dims, max_, min_, function, v_max, p.c1, p.c2, p.epsilon, epsilon_2, p.c_max, p.d_low, p.d_high) for _ in range(p.n_swarms)]
+    group_of_swarms = [initiate_swarm(p.n, n_dims, max_, min_, function, v_max, p.c1, p.c2, p.epsilon, epsilon_2, p.c_max, p.d_low, p.d_high) for _ in range(p.n_swarms)]
     
     # Initiate the pool with global parameters:
     manager= Manager()
